@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import axios from 'axios'
-import CareerGraph from './components/CareerGraph.jsx'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import axios from './lib/api.js'
 import ChatInterface from './components/ChatInterface.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
 import EmptyGraphState from './components/EmptyGraphState.jsx'
@@ -16,6 +15,7 @@ import Sidebar from './components/Sidebar.jsx'
 import { Icon } from './components/icons.jsx'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
+const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
 
 const LOADING_STEPS = [
   'HydraDB is preparing your profile...',
@@ -485,16 +485,18 @@ export default function App() {
             onHackathons={() => setActiveMobileView('hackathons')}
           />
         ) : (
-          <CareerGraph
-            graph={graph}
-            selectedNode={selectedNode}
-            onSelectNode={node => { selectNode(node); setRightPanel(null) }}
-            filter={graphFilter}
-            setFilter={setGraphFilter}
-            onOpenSidebar={() => setSidebarOpen(true)}
-          >
-            {memoryVisible && <MemoryBadge context={returnContext} onDismiss={() => setMemoryVisible(false)} />}
-          </CareerGraph>
+          <Suspense fallback={<LoadingScreen step={0} />}>
+            <CareerGraph
+              graph={graph}
+              selectedNode={selectedNode}
+              onSelectNode={node => { selectNode(node); setRightPanel(null) }}
+              filter={graphFilter}
+              setFilter={setGraphFilter}
+              onOpenSidebar={() => setSidebarOpen(true)}
+            >
+              {memoryVisible && <MemoryBadge context={returnContext} onDismiss={() => setMemoryVisible(false)} />}
+            </CareerGraph>
+          </Suspense>
         )}
 
         {/* Right panel — either node detail or a feature panel */}

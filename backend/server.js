@@ -6,7 +6,22 @@ import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
-import {
+const __dirname = dirname(fileURLToPath(import.meta.url))
+dotenv.config({ path: join(__dirname, '.env') })
+
+const [
+  hydra,
+  claude,
+  groqAI,
+  fetcher,
+] = await Promise.all([
+  import('./hydradb.js'),
+  import('./claude.js'),
+  import('./groq.js'),
+  import('./fetcher.js'),
+])
+
+const {
   initUser,
   getUser,
   updateStack,
@@ -19,519 +34,435 @@ import {
   getAllWikiPages,
   appendToIngestLog,
   getGraphData,
-} from './hydradb.js'
+} = hydra
 
-import {
+const {
   analyzeStackVsStartup,
   generateGapReport,
-  generateInterviewQuestions,
   matchHackathons,
-} from './claude.js'
+  ingestStep1: claudeIngestStep1,
+  ingestStep2GeneratePage: claudeIngestStep2,
+  queryWiki: claudeQueryWiki,
+  generateRoadmap: claudeRoadmap,
+} = claude
 
-import { detectInputType, fetchURL, extractText } from './fetcher.js'
-
-// ── Load env BEFORE any lazy reads ────────────────────────────────────────────
-dotenv.config({ path: join(dirname(fileURLToPath(import.meta.url)), '.env') })
-
-// ── AI provider selection: Groq (free/fast) preferred, Claude as fallback ─────
-import * as groqAI from './groq.js'
-import {
-  ingestStep1 as claudeIngestStep1,
-  ingestStep2GeneratePage as claudeIngestStep2,
-  queryWiki as claudeQueryWiki,
-  generateRoadmap as claudeRoadmap,
-} from './claude.js'
+const { detectInputType, fetchURL, extractText } = fetcher
 
 const useGroq = groqAI.isAvailable()
-const ingestStep1           = useGroq ? groqAI.ingestStep1           : claudeIngestStep1
+const ingestStep1 = useGroq ? groqAI.ingestStep1 : claudeIngestStep1
 const ingestStep2GeneratePage = useGroq ? groqAI.ingestStep2GeneratePage : claudeIngestStep2
-const queryWiki             = useGroq ? groqAI.queryWiki             : claudeQueryWiki
-const generateRoadmap       = useGroq ? groqAI.generateRoadmap       : claudeRoadmap
+const queryWiki = useGroq ? groqAI.queryWiki : claudeQueryWiki
+const generateRoadmap = useGroq ? groqAI.generateRoadmap : claudeRoadmap
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
 const app = express()
-const PORT = process.env.PORT || 3001
+const PORT = Number(process.env.PORT) || 3001
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+const MAX_BODY_SIZE = process.env.MAX_BODY_SIZE || '1mb'
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+]
 
-// ── Load static data ──────────────────────────────────────────────────────────
-
-const startups  = JSON.parse(await readFile(join(__dirname, 'data/startups.json'),  'utf8'))
+const startups = JSON.parse(await readFile(join(__dirname, 'data/startups.json'), 'utf8'))
 const hackathons = JSON.parse(await readFile(join(__dirname, 'data/hackathons.json'), 'utf8'))
-const skills    = JSON.parse(await readFile(join(__dirname, 'data/skills.json'),    'utf8'))
+const skills = JSON.parse(await readFile(join(__dirname, 'data/skills.json'), 'utf8'))
 
-// ── Middleware ────────────────────────────────────────────────────────────────
+class ApiError extends Error {
+  constructor(statusCode, message, code = 'API_ERROR') {
+    super(message)
+    this.statusCode = statusCode
+    this.code = code
+  }
+}
 
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    /\.vercel\.app$/,
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}))
-app.use(express.json())
+function asyncHandler(handler) {
+  return (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next)
+}
 
-app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`)
+function parseAllowedOrigins() {
+  const configured = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean)
+  return configured.length ? configured : DEFAULT_ALLOWED_ORIGINS
+}
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true
+  const allowed = parseAllowedOrigins()
+  return allowed.includes(origin) || /\.vercel\.app$/i.test(new URL(origin).hostname)
+}
+
+function requestLogger(req, res, next) {
+  const started = Date.now()
+  res.on('finish', () => {
+    const ms = Date.now() - started
+    const status = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info'
+    console[status](`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} ${ms}ms`)
+  })
   next()
-})
+}
 
-// ── Internal helpers ──────────────────────────────────────────────────────────
+function securityHeaders(_req, res, next) {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('X-Frame-Options', 'DENY')
+  res.setHeader('Referrer-Policy', 'no-referrer')
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  if (IS_PRODUCTION) {
+    res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains')
+  }
+  next()
+}
+
+function createRateLimiter({ windowMs = 15 * 60 * 1000, limit = 120 } = {}) {
+  const buckets = new Map()
+  return (req, res, next) => {
+    const key = req.ip || req.socket.remoteAddress || 'unknown'
+    const now = Date.now()
+    const bucket = buckets.get(key) ?? { count: 0, resetAt: now + windowMs }
+
+    if (bucket.resetAt <= now) {
+      bucket.count = 0
+      bucket.resetAt = now + windowMs
+    }
+
+    bucket.count += 1
+    buckets.set(key, bucket)
+    res.setHeader('RateLimit-Limit', String(limit))
+    res.setHeader('RateLimit-Remaining', String(Math.max(limit - bucket.count, 0)))
+    res.setHeader('RateLimit-Reset', String(Math.ceil(bucket.resetAt / 1000)))
+
+    if (bucket.count > limit) {
+      return res.status(429).json({ error: 'Too many requests. Please slow down and try again shortly.' })
+    }
+    next()
+  }
+}
+
+function validateUserId(userId) {
+  if (!userId || typeof userId !== 'string' || userId.length > 120) {
+    throw new ApiError(400, 'A valid userId is required', 'VALIDATION_ERROR')
+  }
+}
+
+function sanitizeString(value, max = 2000) {
+  if (value == null) return ''
+  return String(value).replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, max)
+}
+
+function sanitizeStringArray(value, maxItems = 30, maxLength = 80) {
+  if (!Array.isArray(value)) return []
+  return [...new Set(value.map(item => sanitizeString(item, maxLength)).filter(Boolean))].slice(0, maxItems)
+}
+
+function requireNonEmptyArray(value, field) {
+  const clean = sanitizeStringArray(value)
+  if (clean.length === 0) {
+    throw new ApiError(400, `${field} must be a non-empty array`, 'VALIDATION_ERROR')
+  }
+  return clean
+}
 
 function basicMatchScore(userStack, startup) {
   const userNorm = userStack.map(s => s.toLowerCase().trim())
-  const required = startup.skills_required.map(s => s.toLowerCase())
-  const matched  = userNorm.filter(s => required.some(r => r.includes(s) || s.includes(r)))
+  const required = (startup.skills_required ?? []).map(s => s.toLowerCase())
+  const matched = userNorm.filter(s => required.some(r => r.includes(s) || s.includes(r)))
   return Math.round((matched.length / Math.max(required.length, 1)) * 100)
 }
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+function slugify(value) {
+  return sanitizeString(value, 80)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'untitled'
+}
 
-// Health
+app.set('trust proxy', 1)
+app.disable('x-powered-by')
+app.use(securityHeaders)
+app.use(cors({
+  origin(origin, callback) {
+    try {
+      if (isAllowedOrigin(origin)) return callback(null, true)
+      return callback(new ApiError(403, 'Origin is not allowed by CORS', 'CORS_FORBIDDEN'))
+    } catch {
+      return callback(new ApiError(403, 'Invalid Origin header', 'CORS_FORBIDDEN'))
+    }
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false,
+  maxAge: 86400,
+}))
+app.use(express.json({ limit: MAX_BODY_SIZE }))
+app.use(createRateLimiter({
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  limit: Number(process.env.RATE_LIMIT_MAX) || 120,
+}))
+app.use(requestLogger)
+
 app.get('/api/health', (_req, res) => {
   res.json({
-    status:    'ok',
+    status: 'ok',
     timestamp: new Date().toISOString(),
-    hydradb:   Boolean(process.env.HYDRADB_API_KEY),
-    ai:        useGroq ? 'groq' : (Boolean(process.env.ANTHROPIC_API_KEY) ? 'claude' : 'none'),
-    claude:    Boolean(process.env.ANTHROPIC_API_KEY),
-    groq:      useGroq,
+    environment: process.env.NODE_ENV || 'development',
+    hydradb: Boolean(process.env.HYDRADB_API_KEY && process.env.HYDRADB_PROJECT_ID),
+    ai: useGroq ? 'groq' : (process.env.ANTHROPIC_API_KEY ? 'claude' : 'none'),
+    groq: useGroq,
+    claude: Boolean(process.env.ANTHROPIC_API_KEY),
   })
 })
 
-// POST /api/user/init
-app.post('/api/user/init', async (req, res) => {
-  try {
-    const {
-      name = '',
-      stack = [],
-      learning_stack = [],
-      experience = '',
-      goals = [],
-      target_role = '',
-      target_companies = [],
-      timeline = '',
-      learning_style = '',
-    } = req.body
+app.post('/api/user/init', asyncHandler(async (req, res) => {
+  const stack = requireNonEmptyArray(req.body.stack, 'stack')
+  const experience = sanitizeString(req.body.experience, 80)
+  if (!experience) throw new ApiError(400, 'Experience level is required', 'VALIDATION_ERROR')
 
-    // Required field validation
-    if (!Array.isArray(stack) || stack.length === 0) {
-      return res.status(400).json({ error: 'At least one skill is required' })
-    }
-    if (!experience) {
-      return res.status(400).json({ error: 'Experience level is required' })
-    }
+  const userId = uuidv4()
+  const user = await initUser({
+    userId,
+    name: sanitizeString(req.body.name, 120) || 'Developer',
+    stack,
+    learning_stack: sanitizeStringArray(req.body.learning_stack),
+    experience,
+    goals: sanitizeStringArray(req.body.goals, 10, 80),
+    target_role: sanitizeString(req.body.target_role, 120),
+    target_companies: sanitizeStringArray(req.body.target_companies, 5, 120),
+    timeline: sanitizeString(req.body.timeline, 80),
+    learning_style: sanitizeString(req.body.learning_style, 80),
+    created_at: new Date().toISOString(),
+  })
 
-    const userId = uuidv4()
+  res.status(201).json({ userId, message: 'Profile created', user })
+}))
 
-    const user = await initUser({
-      userId,
-      name,
-      stack,
-      learning_stack,
-      experience,
-      goals,
-      target_role,
-      target_companies,
-      timeline,
-      learning_style,
-      created_at: new Date().toISOString(),
+app.get('/api/user/:userId', asyncHandler(async (req, res) => {
+  validateUserId(req.params.userId)
+  const user = await getUser(req.params.userId)
+  if (!user) throw new ApiError(404, 'User not found', 'NOT_FOUND')
+  res.json(user)
+}))
+
+app.post('/api/user/:userId/stack', asyncHandler(async (req, res) => {
+  validateUserId(req.params.userId)
+  const stack = requireNonEmptyArray(req.body.stack, 'stack')
+  const updated = await updateStack(req.params.userId, stack)
+  if (!updated) throw new ApiError(404, 'User not found', 'NOT_FOUND')
+  res.json({ updated: true })
+}))
+
+app.post('/api/analyze', asyncHandler(async (req, res) => {
+  validateUserId(req.body.userId)
+  const userProfile = await getUser(req.body.userId).catch(() => null)
+  const stack = sanitizeStringArray(req.body.stack).length
+    ? sanitizeStringArray(req.body.stack)
+    : (userProfile?.stack ?? [])
+  if (!stack.length) throw new ApiError(400, 'stack must be a non-empty array', 'VALIDATION_ERROR')
+
+  const experience = sanitizeString(req.body.experience, 80) || userProfile?.experience || 'beginner'
+  const targetCompanies = sanitizeStringArray(userProfile?.target_companies ?? [], 5, 120)
+
+  let scored = startups.map(startup => ({ ...startup, match_score: basicMatchScore(stack, startup) }))
+  if (targetCompanies.length) {
+    scored = scored.map(startup => {
+      const nameNorm = startup.name.toLowerCase()
+      const isTarget = targetCompanies.some(tc => nameNorm.includes(tc.toLowerCase()) || tc.toLowerCase().includes(nameNorm))
+      return isTarget ? { ...startup, match_score: Math.min(100, startup.match_score + 20), is_target: true } : startup
     })
-
-    res.status(201).json({ userId, message: 'Profile created', user })
-  } catch (err) {
-    console.error('[POST /api/user/init]', err.message)
-    res.status(500).json({ error: err.message })
   }
-})
 
-// GET /api/user/:userId
-app.get('/api/user/:userId', async (req, res) => {
-  try {
-    const user = await getUser(req.params.userId)
-    if (!user) return res.status(404).json({ error: 'User not found' })
-    res.json(user)
-  } catch (err) {
-    console.error('[GET /api/user/:userId]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
+  scored.sort((a, b) => b.match_score - a.match_score)
+  const top5 = scored.slice(0, 5)
+  const analyses = await Promise.allSettled(top5.map(startup => analyzeStackVsStartup(stack, { ...startup, experience })))
+  const enrichedTop5 = top5.map((startup, i) => ({
+    ...startup,
+    claude_analysis: analyses[i].status === 'fulfilled'
+      ? analyses[i].value
+      : { match_percentage: startup.match_score, matching_skills: [], missing_skills: [], assessment: '', recommended_action: '' },
+  }))
 
-// POST /api/user/:userId/stack
-app.post('/api/user/:userId/stack', async (req, res) => {
-  try {
-    const { stack } = req.body
-    if (!Array.isArray(stack) || stack.length === 0) {
-      return res.status(400).json({ error: 'stack must be a non-empty array' })
-    }
-    await updateStack(req.params.userId, stack)
-    res.json({ updated: true })
-  } catch (err) {
-    console.error('[POST /api/user/:userId/stack]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
+  const enrichedMap = new Map(enrichedTop5.map(startup => [startup.id, startup]))
+  const allStartups = scored.map(startup => enrichedMap.get(startup.id) ?? startup)
+  const topMatch = enrichedTop5[0] ?? null
 
-// POST /api/analyze
-app.post('/api/analyze', async (req, res) => {
-  try {
-    const { userId, stack: bodyStack, experience: bodyExperience } = req.body
+  if (topMatch) await recordStartupView(req.body.userId, topMatch.id, topMatch.name)
+  await updateStack(req.body.userId, stack)
 
-    if (!userId) return res.status(400).json({ error: 'userId is required' })
+  res.json({ startups: allStartups, topMatch, total: allStartups.length })
+}))
 
-    // Load user profile from HydraDB to personalize results
-    const userProfile = await getUser(userId).catch(() => null)
+app.post('/api/gaps', asyncHandler(async (req, res) => {
+  validateUserId(req.body.userId)
+  const stack = requireNonEmptyArray(req.body.stack, 'stack')
+  const targetCompanies = sanitizeStringArray(req.body.targetCompanies, 10, 120)
+  const targets = targetCompanies.length
+    ? startups.filter(s => targetCompanies.includes(s.name) || targetCompanies.includes(s.id))
+    : startups.slice(0, 5)
 
-    // Use stored stack if body doesn't supply one
-    const stack = (Array.isArray(bodyStack) && bodyStack.length > 0)
-      ? bodyStack
-      : (userProfile?.stack ?? [])
+  const report = await generateGapReport(stack, targets.length ? targets : startups.slice(0, 5))
+  await saveGapAnalysis(req.body.userId, { ...report, stack, targets: targets.map(t => t.name) })
+  res.json(report)
+}))
 
-    if (stack.length === 0) {
-      return res.status(400).json({ error: 'stack must be a non-empty array' })
-    }
+app.get('/api/hackathons/:userId', asyncHandler(async (req, res) => {
+  validateUserId(req.params.userId)
+  const stack = sanitizeString(req.query.stack, 1000).split(',').map(s => s.trim()).filter(Boolean)
+  if (!stack.length) return res.json({ ranked_hackathons: hackathons.map(h => ({ ...h, match_score: 0 })) })
 
-    const experience = bodyExperience ?? userProfile?.experience ?? 'beginner'
-    const targetCompanies = userProfile?.target_companies ?? []
+  const { ranked_hackathons } = await matchHackathons(stack, hackathons)
+  const top = ranked_hackathons[0]
+  if (top) await recordHackathonView(req.params.userId, top.id, top.name)
+  res.json({ ranked_hackathons })
+}))
 
-    // Basic match score for all startups
-    let scored = startups.map(startup => ({
-      ...startup,
-      match_score: basicMatchScore(stack, startup),
-    }))
+app.get('/api/return-context/:userId', asyncHandler(async (req, res) => {
+  validateUserId(req.params.userId)
+  res.json(await getReturnContext(req.params.userId, startups, hackathons))
+}))
 
-    // Personalize: boost startups that match user's target companies
-    if (targetCompanies.length > 0) {
-      scored = scored.map(startup => {
-        const nameNorm = startup.name.toLowerCase()
-        const isTarget = targetCompanies.some(tc => {
-          const tcNorm = tc.toLowerCase()
-          return nameNorm.includes(tcNorm) || tcNorm.includes(nameNorm)
-        })
-        return isTarget
-          ? { ...startup, match_score: Math.min(100, startup.match_score + 20), is_target: true }
-          : startup
-      })
-    }
-
-    scored.sort((a, b) => b.match_score - a.match_score)
-
-    // Deep Claude analysis for top 5
-    const top5 = scored.slice(0, 5)
-    const claudeResults = await Promise.allSettled(
-      top5.map(startup => analyzeStackVsStartup(stack, startup))
-    )
-
-    const enrichedTop5 = top5.map((startup, i) => ({
-      ...startup,
-      claude_analysis: claudeResults[i].status === 'fulfilled'
-        ? claudeResults[i].value
-        : { match_percentage: startup.match_score, matching_skills: [], missing_skills: [], assessment: '', recommended_action: '' },
-    }))
-
-    // Merge enriched top 5 back, keep rest as-is
-    const enrichedMap = new Map(enrichedTop5.map(s => [s.id, s]))
-    const allStartups = scored.map(s => enrichedMap.get(s.id) ?? s)
-
-    // Record top match view in HydraDB
-    const topMatch = enrichedTop5[0]
-    if (topMatch) {
-      await recordStartupView(userId, topMatch.id, topMatch.name)
-    }
-
-    // Update stack in HydraDB
-    await updateStack(userId, stack)
-
-    res.json({
-      startups: allStartups,
-      topMatch: topMatch ?? null,
-      total: allStartups.length,
-    })
-  } catch (err) {
-    console.error('[POST /api/analyze]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// POST /api/gaps
-app.post('/api/gaps', async (req, res) => {
-  try {
-    const { userId, stack, targetCompanies } = req.body
-
-    if (!userId) return res.status(400).json({ error: 'userId is required' })
-    if (!Array.isArray(stack) || stack.length === 0) {
-      return res.status(400).json({ error: 'stack must be a non-empty array' })
-    }
-
-    // Resolve company names to full startup objects
-    const targets = Array.isArray(targetCompanies) && targetCompanies.length > 0
-      ? startups.filter(s => targetCompanies.includes(s.name) || targetCompanies.includes(s.id))
-      : startups.slice(0, 5) // Default to top 5 if none specified
-
-    const report = await generateGapReport(stack, targets)
-    await saveGapAnalysis(userId, { ...report, stack, targets: targets.map(t => t.name) })
-
-    res.json(report)
-  } catch (err) {
-    console.error('[POST /api/gaps]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// GET /api/hackathons/:userId
-app.get('/api/hackathons/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params
-    const rawStack = req.query.stack ?? ''
-    const stack = rawStack ? rawStack.split(',').map(s => s.trim()).filter(Boolean) : []
-
-    if (stack.length === 0) {
-      return res.json({ ranked_hackathons: hackathons.map(h => ({ ...h, match_score: 0 })) })
-    }
-
-    const { ranked_hackathons } = await matchHackathons(stack, hackathons)
-
-    // Record top hackathon view in HydraDB
-    const top = ranked_hackathons[0]
-    if (top) {
-      await recordHackathonView(userId, top.id, top.name)
-    }
-
-    res.json({ ranked_hackathons })
-  } catch (err) {
-    console.error('[GET /api/hackathons/:userId]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// GET /api/return-context/:userId
-app.get('/api/return-context/:userId', async (req, res) => {
-  try {
-    const context = await getReturnContext(req.params.userId, startups, hackathons)
-    res.json(context)
-  } catch (err) {
-    console.error('[GET /api/return-context/:userId]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// GET /api/skills
 app.get('/api/skills', (_req, res) => {
   res.json(skills)
 })
 
-// ── Wiki ingest pipeline ──────────────────────────────────────────────────────
+app.post('/api/ingest', asyncHandler(async (req, res) => {
+  validateUserId(req.body.userId)
+  const input = sanitizeString(req.body.input, 12000)
+  if (!input) throw new ApiError(400, 'input is required', 'VALIDATION_ERROR')
 
-// POST /api/ingest
-// Body: { userId, input, inputType? }
-// Runs 2-step LLM pipeline: extract entities → generate wiki pages
-app.post('/api/ingest', async (req, res) => {
-  try {
-    const { userId, input } = req.body
-    if (!userId) return res.status(400).json({ error: 'userId is required' })
-    if (!input || typeof input !== 'string' || !input.trim()) {
-      return res.status(400).json({ error: 'input is required' })
-    }
+  const inputType = detectInputType(input)
+  if (inputType === 'screenshot') {
+    throw new ApiError(422, 'Screenshot analysis is not yet supported. Please copy and paste the text from the page directly.', 'UNSUPPORTED_INPUT')
+  }
 
-    const inputType = detectInputType(input)
-    let content = ''
-
-    if (inputType === 'screenshot') {
-      return res.status(422).json({ error: 'Screenshot analysis is not yet supported. Please copy and paste the text from the page directly.' })
-    }
-
-    if (inputType === 'url') {
-      try {
-        content = await fetchURL(input.trim())
-      } catch (fetchErr) {
-        return res.status(422).json({ error: `Could not fetch URL: ${fetchErr.message}` })
-      }
-      // JS-rendered pages (React/Next SPAs) return a near-empty HTML shell
-      if (content.replace(/\s+/g, '').length < 300) {
-        return res.status(422).json({
-          error: 'This page is JavaScript-rendered and cannot be scraped directly. Please copy and paste the job description text instead.',
-        })
-      }
-    } else {
-      content = extractText(input, inputType)
-    }
-
-    // Get user's current stack for context
-    const user = await getUser(userId)
-    const userStack = user?.stack ?? []
-
-    // Step 1 — extract entities
-    console.log(`[/api/ingest] Step 1: extracting entities for ${userId}`)
-    const entities = await ingestStep1(content, userStack)
-
-    // Step 2 — generate wiki pages for each entity (in parallel, capped at 6)
-    const pageJobs = []
-
-    for (const company of (entities.companies ?? []).slice(0, 3)) {
-      pageJobs.push({ type: 'company', entity: company, name: company.name?.toLowerCase().replace(/\s+/g, '-') })
-    }
-    for (const skill of (entities.skills ?? []).slice(0, 2)) {
-      pageJobs.push({ type: 'skill', entity: skill, name: skill.name?.toLowerCase().replace(/\s+/g, '-') })
-    }
-    for (const hackathon of (entities.hackathons ?? []).slice(0, 1)) {
-      pageJobs.push({ type: 'hackathon', entity: hackathon, name: hackathon.name?.toLowerCase().replace(/\s+/g, '-') })
-    }
-    for (const gap of (entities.gaps ?? []).slice(0, 2)) {
-      pageJobs.push({ type: 'gap', entity: gap, name: gap.skill?.toLowerCase().replace(/\s+/g, '-') })
-    }
-
-    console.log(`[/api/ingest] Step 2: generating ${pageJobs.length} wiki pages`)
-
-    const results = await Promise.allSettled(
-      pageJobs.map(async job => {
-        const markdown = await ingestStep2GeneratePage(job.type, job.entity, userStack, content)
-        await saveWikiPage(userId, job.type, job.name, markdown, { source: inputType === 'url' ? input.trim() : inputType })
-        return { type: job.type, name: job.name, pageKey: `${job.type}/${job.name}` }
-      })
-    )
-
-    const saved = results
-      .filter(r => r.status === 'fulfilled')
-      .map(r => r.value)
-
-    // Log ingest event
-    await appendToIngestLog(userId, {
-      inputType,
-      source: inputType === 'url' ? input.trim().slice(0, 200) : `${content.slice(0, 60)}…`,
-      pagesCreated: saved.length,
-      summary: entities.summary ?? '',
+  let content = ''
+  if (inputType === 'url') {
+    content = await fetchURL(input).catch(err => {
+      throw new ApiError(422, `Could not fetch URL: ${err.message}`, 'FETCH_FAILED')
     })
-
-    res.json({
-      ok: true,
-      summary: entities.summary ?? '',
-      entities: {
-        companies: entities.companies?.length ?? 0,
-        skills: entities.skills?.length ?? 0,
-        hackathons: entities.hackathons?.length ?? 0,
-        gaps: entities.gaps?.length ?? 0,
-      },
-      pages: saved,
-    })
-  } catch (err) {
-    console.error('[POST /api/ingest]', err.message)
-    if (err.isRateLimit) {
-      return res.status(429).json({ error: 'AI daily token limit reached. Add ANTHROPIC_API_KEY to .env to use Claude as fallback, or wait until tomorrow (UTC midnight) for Groq to reset.' })
+    if (content.replace(/\s+/g, '').length < 300) {
+      throw new ApiError(422, 'This page is JavaScript-rendered and cannot be scraped directly. Please copy and paste the job description text instead.', 'FETCH_FAILED')
     }
-    res.status(500).json({ error: err.message })
+  } else {
+    content = extractText(input, inputType)
   }
+
+  const user = await getUser(req.body.userId)
+  const userStack = user?.stack ?? []
+  const entities = await ingestStep1(content, userStack)
+  const pageJobs = [
+    ...(entities.companies ?? []).slice(0, 3).map(entity => ({ type: 'company', entity, name: slugify(entity.name) })),
+    ...(entities.skills ?? []).slice(0, 2).map(entity => ({ type: 'skill', entity, name: slugify(entity.name) })),
+    ...(entities.hackathons ?? []).slice(0, 1).map(entity => ({ type: 'hackathon', entity, name: slugify(entity.name) })),
+    ...(entities.gaps ?? []).slice(0, 2).map(entity => ({ type: 'gap', entity, name: slugify(entity.skill) })),
+  ]
+
+  const results = await Promise.allSettled(pageJobs.map(async job => {
+    const markdown = await ingestStep2GeneratePage(job.type, job.entity, userStack, content)
+    await saveWikiPage(req.body.userId, job.type, job.name, markdown, { source: inputType === 'url' ? input : inputType })
+    return { type: job.type, name: job.name, pageKey: `${job.type}/${job.name}` }
+  }))
+  const saved = results.filter(result => result.status === 'fulfilled').map(result => result.value)
+
+  await appendToIngestLog(req.body.userId, {
+    inputType,
+    source: inputType === 'url' ? input.slice(0, 200) : `${content.slice(0, 60)}...`,
+    pagesCreated: saved.length,
+    summary: sanitizeString(entities.summary, 500),
+  })
+
+  res.json({
+    ok: true,
+    summary: entities.summary ?? '',
+    entities: {
+      companies: entities.companies?.length ?? 0,
+      skills: entities.skills?.length ?? 0,
+      hackathons: entities.hackathons?.length ?? 0,
+      gaps: entities.gaps?.length ?? 0,
+    },
+    pages: saved,
+  })
+}))
+
+app.get('/api/wiki-pages/:userId', asyncHandler(async (req, res) => {
+  validateUserId(req.params.userId)
+  const pages = await getAllWikiPages(req.params.userId)
+  res.json({ pages, total: pages.length })
+}))
+
+app.get('/api/wiki/:userId/:pageType/:pageName', asyncHandler(async (req, res) => {
+  validateUserId(req.params.userId)
+  const pageType = slugify(req.params.pageType)
+  const pageName = slugify(req.params.pageName)
+  const page = await getWikiPage(req.params.userId, pageType, pageName)
+  if (!page) throw new ApiError(404, 'Page not found', 'NOT_FOUND')
+  res.json(page)
+}))
+
+app.post('/api/chat', asyncHandler(async (req, res) => {
+  validateUserId(req.body.userId)
+  const question = sanitizeString(req.body.question, 1000)
+  if (!question) throw new ApiError(400, 'question is required', 'VALIDATION_ERROR')
+  const user = await getUser(req.body.userId)
+  const userStack = sanitizeStringArray(req.body.userStack).length ? sanitizeStringArray(req.body.userStack) : (user?.stack ?? [])
+  const wikiPages = await getAllWikiPages(req.body.userId)
+  res.json(await queryWiki(question, wikiPages, userStack))
+}))
+
+app.get('/api/roadmap/:userId', asyncHandler(async (req, res) => {
+  validateUserId(req.params.userId)
+  const user = await getUser(req.params.userId)
+  if (!user) throw new ApiError(404, 'User not found', 'NOT_FOUND')
+  const lastGapAnalysis = user.gap_analyses?.at(-1)
+  const roadmap = await generateRoadmap(user.stack ?? [], lastGapAnalysis?.priority_skills ?? [], user.goals ?? [], await getAllWikiPages(req.params.userId))
+  res.json(roadmap)
+}))
+
+app.get('/api/journey/:userId', asyncHandler(async (req, res) => {
+  validateUserId(req.params.userId)
+  const user = await getUser(req.params.userId)
+  if (!user) throw new ApiError(404, 'User not found', 'NOT_FOUND')
+  res.json({ journey: user.journey ?? [] })
+}))
+
+app.get('/api/graph-data/:userId', asyncHandler(async (req, res) => {
+  validateUserId(req.params.userId)
+  res.json(await getGraphData(req.params.userId))
+}))
+
+app.use((_req, _res, next) => {
+  next(new ApiError(404, 'Route not found', 'NOT_FOUND'))
 })
-
-// GET /api/wiki-pages/:userId
-// Returns all wiki pages for a user
-app.get('/api/wiki-pages/:userId', async (req, res) => {
-  try {
-    const pages = await getAllWikiPages(req.params.userId)
-    res.json({ pages, total: pages.length })
-  } catch (err) {
-    console.error('[GET /api/wiki-pages/:userId]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// GET /api/wiki/:userId/:pageType/:pageName
-// Returns a single wiki page
-app.get('/api/wiki/:userId/:pageType/:pageName', async (req, res) => {
-  try {
-    const { userId, pageType, pageName } = req.params
-    const page = await getWikiPage(userId, pageType, pageName)
-    if (!page) return res.status(404).json({ error: 'Page not found' })
-    res.json(page)
-  } catch (err) {
-    console.error('[GET /api/wiki/:userId/:pageType/:pageName]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// POST /api/chat
-// Body: { userId, question, userStack? }
-// Answers a question using the user's wiki as context
-app.post('/api/chat', async (req, res) => {
-  try {
-    const { userId, question, userStack: bodyStack } = req.body
-    if (!userId) return res.status(400).json({ error: 'userId is required' })
-    if (!question?.trim()) return res.status(400).json({ error: 'question is required' })
-
-    const user = await getUser(userId)
-    const userStack = bodyStack ?? user?.stack ?? []
-    const wikiPages = await getAllWikiPages(userId)
-
-    const result = await queryWiki(question, wikiPages, userStack)
-    res.json(result)
-  } catch (err) {
-    console.error('[POST /api/chat]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// GET /api/roadmap/:userId
-// Generates a personalized week-by-week learning roadmap
-app.get('/api/roadmap/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params
-    const user = await getUser(userId)
-    if (!user) return res.status(404).json({ error: 'User not found' })
-
-    const userStack = user.stack ?? []
-    const lastGapAnalysis = user.gap_analyses?.at(-1)
-    const gapSkills = lastGapAnalysis?.priority_skills ?? []
-    const goals = user.goals ?? []
-    const wikiPages = await getAllWikiPages(userId)
-
-    const roadmap = await generateRoadmap(userStack, gapSkills, goals, wikiPages)
-    res.json(roadmap)
-  } catch (err) {
-    console.error('[GET /api/roadmap/:userId]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// GET /api/journey/:userId
-// Returns the user's career journey log
-app.get('/api/journey/:userId', async (req, res) => {
-  try {
-    const user = await getUser(req.params.userId)
-    if (!user) return res.status(404).json({ error: 'User not found' })
-    res.json({ journey: user.journey ?? [] })
-  } catch (err) {
-    console.error('[GET /api/journey/:userId]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// GET /api/graph-data/:userId
-// Returns wiki-derived graph data (supplements the existing client-side graph)
-app.get('/api/graph-data/:userId', async (req, res) => {
-  try {
-    const data = await getGraphData(req.params.userId)
-    res.json(data)
-  } catch (err) {
-    console.error('[GET /api/graph-data/:userId]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// ── Error middleware ──────────────────────────────────────────────────────────
 
 app.use((err, _req, res, _next) => {
-  console.error('[Unhandled error]', err.message)
-  res.status(500).json({ error: 'Internal server error', detail: err.message })
+  const statusCode = Number(err.statusCode) || 500
+  const isRateLimit = err.isRateLimit || statusCode === 429
+  const message = statusCode >= 500
+    ? 'Internal server error'
+    : err.message
+
+  console.error('[API error]', {
+    statusCode,
+    code: err.code || (isRateLimit ? 'RATE_LIMITED' : 'INTERNAL_ERROR'),
+    message: err.message,
+    stack: IS_PRODUCTION ? undefined : err.stack,
+  })
+
+  res.status(statusCode).json({
+    error: isRateLimit ? 'AI daily token limit reached. Please try again later or configure a fallback provider.' : message,
+    code: err.code || (isRateLimit ? 'RATE_LIMITED' : 'INTERNAL_ERROR'),
+    ...(IS_PRODUCTION ? {} : { detail: err.message }),
+  })
 })
 
-// ── Start ─────────────────────────────────────────────────────────────────────
-
 app.listen(PORT, () => {
-  console.log('─────────────────────────────────────────')
-  console.log(`  DevRadar backend   http://localhost:${PORT}`)
-  console.log(`  HydraDB            ${process.env.HYDRADB_API_KEY ? '✓ key set' : '✗ using local Map fallback'}`)
-  console.log(`  Claude             ${process.env.ANTHROPIC_API_KEY ? '✓ key set' : '✗ missing key'}`)
-  console.log(`  Startups loaded    ${startups.length}`)
-  console.log(`  Hackathons loaded  ${hackathons.length}`)
-  console.log(`  Skills loaded      ${skills.length}`)
-  console.log('─────────────────────────────────────────')
+  console.log('----------------------------------------')
+  console.log(`DevRadar backend http://localhost:${PORT}`)
+  console.log(`Environment      ${process.env.NODE_ENV || 'development'}`)
+  console.log(`HydraDB          ${process.env.HYDRADB_API_KEY ? 'configured' : 'local Map fallback'}`)
+  console.log(`AI provider      ${useGroq ? 'Groq' : (process.env.ANTHROPIC_API_KEY ? 'Claude' : 'none')}`)
+  console.log(`Startups loaded  ${startups.length}`)
+  console.log(`Hackathons       ${hackathons.length}`)
+  console.log(`Skills           ${skills.length}`)
+  console.log('----------------------------------------')
 })

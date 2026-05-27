@@ -1,9 +1,9 @@
-﻿import { useRef, useState } from 'react'
-import axios from 'axios'
+import { useRef, useState } from 'react'
+import axios from '../lib/api.js'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// â”€â”€ Skill categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Skill categories ──────────────────────────────────────────────────────────
 const SKILL_CATEGORIES = [
   { label: 'Frontend',       skills: ['React', 'Vue.js', 'Next.js', 'TypeScript', 'JavaScript', 'Tailwind CSS', 'HTML/CSS'] },
   { label: 'Backend',        skills: ['Node.js', 'Python', 'Java', 'Go', 'Django', 'FastAPI', 'Express.js'] },
@@ -25,14 +25,14 @@ const FLOAT_CIRCLES = [
   { size: 280, color: 'var(--circle-4)', bottom: '15%',left: '30%',   dur: '18s', delay: '1s'  },
 ]
 
-// â”€â”€ Skill state cycle: '' â†’ 'know_well' â†’ 'learning' â†’ '' â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Skill state cycle: '' → 'know_well' → 'learning' → '' ────────────────────
 function cycleSkill(current) {
   if (!current)               return 'know_well'
   if (current === 'know_well') return 'learning'
   return ''
 }
 
-// â”€â”€ Individual skill button â€” uses CSS classes for theme-aware colors â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Individual skill button — uses CSS classes for theme-aware colors ─────────
 function SkillButton({ skill, state, onClick }) {
   const stateClass =
     state === 'know_well' ? 'skill-btn--know-well' :
@@ -45,19 +45,19 @@ function SkillButton({ skill, state, onClick }) {
       className={`skill-btn ${stateClass}`}
       onClick={onClick}
       title={
-        state === 'know_well' ? 'âœ“ Know well' :
-        state === 'learning'  ? 'â³ Learning'  :
+        state === 'know_well' ? '✓ Know well' :
+        state === 'learning'  ? '⏳ Learning'  :
         'Click to add'
       }
     >
-      {state === 'know_well' && <span className="skill-btn-icon">âœ“</span>}
-      {state === 'learning'  && <span className="skill-btn-icon">â³</span>}
+      {state === 'know_well' && <span className="skill-btn-icon">✓</span>}
+      {state === 'learning'  && <span className="skill-btn-icon">⏳</span>}
       {skill}
     </button>
   )
 }
 
-// â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Main component ────────────────────────────────────────────────────────────
 export default function OpeningScreen({ onComplete }) {
   const [skillStates, setSkillStates]         = useState({})
   const [customInput, setCustomInput]         = useState('')
@@ -131,7 +131,7 @@ export default function OpeningScreen({ onComplete }) {
         goals,
       })
     } catch (err) {
-      setError(err.response?.data?.error ?? 'Could not connect â€” is the backend running?')
+      setError(err.appMessage ?? 'Could not connect - is the backend running?')
       setLoading(false)
     }
   }
@@ -179,9 +179,9 @@ export default function OpeningScreen({ onComplete }) {
         {/* Feature pills */}
         <div className="opening-pills" style={{ marginTop: 14 }}>
           {[
-            { label: 'ðŸ—º  Career Graph', color: 'var(--node-skill)',     bg: 'var(--info-bg)',    border: 'var(--info-border)' },
-            { label: 'ðŸ’¬  Ask Anything', color: 'var(--success)',        bg: 'var(--success-bg)', border: 'var(--success-border)' },
-            { label: 'ðŸ“  Roadmap',      color: 'var(--node-hackathon)', bg: 'var(--accent-bg)',  border: 'var(--accent-border)' },
+            { label: '🗺  Career Graph', color: 'var(--node-skill)',     bg: 'var(--info-bg)',    border: 'var(--info-border)' },
+            { label: '💬  Ask Anything', color: 'var(--success)',        bg: 'var(--success-bg)', border: 'var(--success-border)' },
+            { label: '📍  Roadmap',      color: 'var(--node-hackathon)', bg: 'var(--accent-bg)',  border: 'var(--accent-border)' },
           ].map(p => (
             <span
               key={p.label}
@@ -195,16 +195,16 @@ export default function OpeningScreen({ onComplete }) {
 
         <div className="opening-divider" />
 
-        {/* â”€â”€ SKILL PICKER â”€â”€ */}
+        {/* ── SKILL PICKER ── */}
         <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <label className="opening-label" style={{ margin: 0 }}>Your tech skills</label>
           <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--text-muted)' }}>
-            <span style={{ color: 'var(--info)' }}>âœ“ Know well</span>
-            <span style={{ color: 'var(--warning)' }}>â³ Learning</span>
+            <span style={{ color: 'var(--info)' }}>✓ Know well</span>
+            <span style={{ color: 'var(--warning)' }}>⏳ Learning</span>
           </div>
         </div>
         <p style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 12 }}>
-          Click once = know well Â· Click twice = currently learning Â· Click again = remove
+          Click once = know well · Click twice = currently learning · Click again = remove
         </p>
 
         {SKILL_CATEGORIES.map(cat => (
@@ -239,7 +239,7 @@ export default function OpeningScreen({ onComplete }) {
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomSkill() } }}
             onFocus={e => { e.target.style.borderColor = 'var(--border-active)' }}
             onBlur={e => { e.target.style.borderColor = 'var(--border)' }}
-            placeholder="+ Add custom skillâ€¦"
+            placeholder="+ Add custom skill…"
           />
           <button
             type="button"
@@ -259,10 +259,10 @@ export default function OpeningScreen({ onComplete }) {
         {/* Selected summary */}
         {(knowWell.length > 0 || learning.length > 0) && (
           <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
-            {knowWell.length > 0 && <span style={{ color: 'var(--info)' }}>âœ“ {knowWell.join(', ')}</span>}
+            {knowWell.length > 0 && <span style={{ color: 'var(--info)' }}>✓ {knowWell.join(', ')}</span>}
             {learning.length > 0 && (
               <span style={{ color: 'var(--warning)', marginLeft: knowWell.length > 0 ? 10 : 0 }}>
-                â³ {learning.join(', ')}
+                ⏳ {learning.join(', ')}
               </span>
             )}
           </div>
@@ -270,7 +270,7 @@ export default function OpeningScreen({ onComplete }) {
 
         <div className="opening-divider" />
 
-        {/* â”€â”€ PROFILE FIELDS â”€â”€ */}
+        {/* ── PROFILE FIELDS ── */}
 
         {/* Experience */}
         <div className="opening-row-group">
@@ -379,13 +379,13 @@ export default function OpeningScreen({ onComplete }) {
           }}
         >
           {loading
-            ? 'Building your graphâ€¦'
+            ? 'Building your graph…'
             : knowWell.length === 0
               ? 'Select at least one skill to continue'
-              : `Start â†’ Build Career Graph (${knowWell.length + learning.length} skills)`}
+              : `Start → Build Career Graph (${knowWell.length + learning.length} skills)`}
         </button>
 
-        <p className="opening-footer">Powered by HydraDB Â· {import.meta.env.VITE_AI_PROVIDER ?? 'Claude AI'} Â· WikiThon 2026</p>
+        <p className="opening-footer">Powered by HydraDB · {import.meta.env.VITE_AI_PROVIDER ?? 'Claude AI'} · WikiThon 2026</p>
       </div>
     </div>
   )

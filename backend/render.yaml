@@ -4,17 +4,25 @@ services:
     env: node
     region: singapore
     plan: free
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: npm ci
+    startCommand: npm start
     healthCheckPath: /api/health
     envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: CORS_ORIGIN
+        sync: false
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX
+        value: 120
+      - key: GROQ_API_KEY
+        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: HYDRADB_API_KEY
         sync: false
       - key: HYDRADB_PROJECT_ID
         sync: false
-      - key: PORT
-        value: 3001
-      - key: NODE_ENV
-        value: production

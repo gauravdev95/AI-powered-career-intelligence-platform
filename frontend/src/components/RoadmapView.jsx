@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import axios from '../lib/api.js'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
@@ -101,7 +101,7 @@ export default function RoadmapView({ userId }) {
       const { data } = await axios.get(`${API_BASE}/api/roadmap/${userId}`)
       setRoadmap(data)
     } catch (err) {
-      setError(err.response?.data?.error ?? 'Failed to load roadmap')
+      setError(err.appMessage ?? 'Failed to load roadmap')
     } finally {
       setLoading(false)
     }

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import axios from 'axios'
+import axios from '../lib/api.js'
 import DevRadarLogo from './DevRadarLogo.jsx'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
@@ -586,7 +586,7 @@ export default function OnboardingWizard({ onComplete, waking = false, onGoHome 
         goals,
       })
     } catch (err) {
-      setError(err.response?.data?.error ?? 'Could not connect — is the backend running?')
+      setError(err.appMessage ?? 'Could not connect - is the backend running?')
       setLoading(false)
       setSubmitSteps([])
     }

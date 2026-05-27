@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import axios from 'axios'
+import axios from '../lib/api.js'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
@@ -71,7 +71,7 @@ export default function ChatInterface({ userId, userStack, wikiPageCount }) {
     } catch (err) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: err.response?.data?.error ?? 'Something went wrong. Please try again.',
+        content: err.appMessage ?? 'Something went wrong. Please try again.',
         citations: [],
         time: now(),
       }])

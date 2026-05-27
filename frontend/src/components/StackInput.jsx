@@ -1,5 +1,5 @@
-﻿import { useCallback, useEffect, useRef, useState } from 'react'
-import axios from 'axios'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import axios from '../lib/api.js'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 

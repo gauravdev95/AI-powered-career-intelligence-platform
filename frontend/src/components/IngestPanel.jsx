@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from 'react'
-import axios from 'axios'
+import axios from '../lib/api.js'
 import { Icon } from './icons.jsx'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
@@ -66,7 +66,7 @@ export default function IngestPanel({ userId, onPagesCreated }) {
       setInput('')
       if (onPagesCreated) onPagesCreated(data.pages ?? [])
     } catch (err) {
-      const msg = err.response?.data?.error ?? err.message
+      const msg = err.appMessage ?? err.message
       addLog('error', `✗ ${msg}`)
     } finally {
       setLoading(false)

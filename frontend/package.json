@@ -1,12 +1,14 @@
 {
   "name": "devradar-frontend",
   "version": "1.0.0",
-  "description": "DevRadar frontend — Your career. One screen. Always remembered.",
+  "description": "DevRadar frontend - Your career. One screen. Always remembered.",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "vite build"
   },
   "dependencies": {
     "axios": "^1.7.2",

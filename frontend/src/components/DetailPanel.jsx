@@ -1,4 +1,4 @@
-﻿import axios from 'axios'
+import axios from '../lib/api.js'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
@@ -25,7 +25,7 @@ function Header({ node, onClose }) {
         <span className={`node-type-badge ${node.type}`}>{node.type.replace('_', ' ')}</span>
         <span className="panel-title">{node.label}</span>
       </div>
-      <button className="panel-close" type="button" onClick={onClose} aria-label="Close detail panel">Ã—</button>
+      <button className="panel-close" type="button" onClick={onClose} aria-label="Close detail panel">×</button>
     </div>
   )
 }
@@ -97,7 +97,7 @@ function SkillKnownContent({ node, startups, onFocus }) {
         <p className="panel-section-title">Demand</p>
         <div className="detail-row"><span>Demand score</span><span>{demand}/100</span></div>
         <div className="progress-track"><div className="progress-fill" style={{ width: `${demand}%`, background: 'var(--success)' }} /></div>
-        <div style={{ marginTop: 10 }}><span className="pill known">rising â†‘</span></div>
+        <div style={{ marginTop: 10 }}><span className="pill known">rising ↑</span></div>
       </div>
       <div className="panel-section">
         <p className="panel-section-title">Companies wanting this</p>
@@ -143,7 +143,7 @@ function SkillGapContent({ node, userId, userStack, onLearned }) {
           <div className="detail-row"><span>Time</span><span>{gap.time_weeks ?? 2} weeks</span></div>
           <div className="detail-row"><span>Difficulty</span><span>{gap.difficulty ?? 'Beginner friendly'}</span></div>
           <div className="detail-row"><span>Prerequisite</span><span>JavaScript</span></div>
-          {gap.resource && <a href={gap.resource} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 10 }}>Start learning â†’</a>}
+          {gap.resource && <a href={gap.resource} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 10 }}>Start learning →</a>}
         </div>
         <div className="panel-section">
           <p className="panel-section-title">Impact</p>
