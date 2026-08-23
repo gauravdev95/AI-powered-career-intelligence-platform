@@ -15,7 +15,7 @@ import RoadmapView from './components/RoadmapView.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import { Icon } from './components/icons.jsx'
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ai-powered-career-intelligence-platform-9bdm.onrender.com'
 const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
 
 /** Deepest focus trail we keep. Older hops fall off the front of the breadcrumb. */
