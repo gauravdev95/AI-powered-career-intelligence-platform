@@ -1,39 +1,67 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Icon } from './icons.jsx'
 import ThemeSwitcher from './ThemeSwitcher.jsx'
 import DevRadarLogo from './DevRadarLogo.jsx'
 
-function scoreClass(score) {
-  if (score >= 80) return 'success'
-  if (score >= 60) return 'blue'
-  return 'warning'
-}
+/**
+ * Workspace sidebar — the readable index of the graph.
+ *
+ * The canvas only ever shows one neighbourhood, so this list is how you reach
+ * anything that is currently off-canvas. It is built as a table, not a tree: one
+ * row per node, a fixed score column on the right, and section headers that carry
+ * their own counts. Selection is derived from `focusId`, so the highlighted row is
+ * always the node at the centre of the canvas — there is no second source of truth.
+ */
 
-function daysUntil(date) {
-  if (!date) return 999
-  return Math.max(0, Math.ceil((new Date(date) - new Date()) / 86400000))
-}
-
-function Item({ icon, label, active, children, onClick, indent = false }) {
+/** Right-hand score column. Every row carries one, so the column never ragged. */
+function Score({ meta }) {
+  if (!meta) return <span className="row-score row-score--empty" aria-hidden="true">·</span>
   return (
-    <button className={`sidebar-item ${active ? 'active' : ''} ${indent ? 'indent' : ''}`} type="button" onClick={onClick} title={label}>
-      {icon}
-      <span className="sidebar-item-text">{label}</span>
-      {children}
-    </button>
+    <span className={`row-score row-score--${meta.tone ?? 'muted'}`}>
+      {meta.value}{meta.unit ?? ''}
+    </span>
+  )
+}
+
+function Row({ detail, focusId, onFocusNode, mark }) {
+  if (!detail) return null
+  return (
+    <li>
+      <button
+        type="button"
+        className={`nav-row ${focusId === detail.id ? 'is-current' : ''}`}
+        onClick={() => onFocusNode(detail.id)}
+        title={detail.label}
+        aria-current={focusId === detail.id ? 'true' : undefined}
+      >
+        <span className={`row-mark row-mark--${detail.type}`} aria-hidden="true">{mark}</span>
+        <span className="row-label">{detail.label}</span>
+        <Score meta={detail.meta} />
+      </button>
+    </li>
+  )
+}
+
+function Section({ title, count, children }) {
+  return (
+    <section className="nav-section">
+      <h2 className="nav-section-head">
+        <span className="nav-section-title">{title}</span>
+        <span className="nav-section-count">{count}</span>
+      </h2>
+      <ul className="nav-list">{children}</ul>
+    </section>
   )
 }
 
 export default function Sidebar({
   graph,
-  selectedNode,
-  onSelectNode,
+  focusId,
+  onFocusNode,
   userStack,
   startups,
   hackathons,
   gapSkills,
-  activeMobileView,
-  setActiveMobileView,
   rightPanel,
   onSetRightPanel,
   wikiPageCount,
@@ -42,173 +70,136 @@ export default function Sidebar({
   const [tab, setTab] = useState('graph')
   const [query, setQuery] = useState('')
   const [listFilter, setListFilter] = useState('all')
-  const selectedId = selectedNode?.id
-  const knownSkills = userStack.length ? userStack : ['React', 'Node.js', 'Python']
+
+  const knownSkills = userStack.length ? userStack : graph.knownSkills
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return graph.nodeDetails.filter(node => {
-      if (listFilter !== 'all') {
+    return graph.nodeDetails
+      .filter(node => {
+        if (node.type === 'user') return false
         if (listFilter === 'skills' && !['skill_known', 'skill_gap'].includes(node.type)) return false
         if (listFilter === 'startups' && node.type !== 'startup') return false
         if (listFilter === 'hackathons' && node.type !== 'hackathon') return false
-      }
-      return !q || node.label.toLowerCase().includes(q)
-    })
+        return !q || node.label.toLowerCase().includes(q)
+      })
+      .sort((a, b) => (b.sort ?? 0) - (a.sort ?? 0))
   }, [graph.nodeDetails, query, listFilter])
+
+  const get = id => graph.nodeMap.get(id)
 
   return (
     <aside className="sidebar">
       <div className="sidebar-top">
-        <button
-          type="button"
-          onClick={onGoHome}
-          className="wordmark-row"
-          style={{ background: 'none', border: 'none', padding: 0, cursor: onGoHome ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 8 }}
-        >
+        <button type="button" onClick={onGoHome} className="brand-row" aria-label="Grafted home">
           <DevRadarLogo size={24} />
-          <p className="wordmark" style={{ margin: 0 }}>devradar</p>
+          <span className="brand-text">
+            <span className="brand-word">grafted</span>
+            <span className="brand-tagline">Your career, remembered</span>
+          </span>
         </button>
         <span className="event-badge">WikiThon 2026</span>
-        <div className="sidebar-divider" />
       </div>
 
-      <div className="sidebar-tabs">
-        {['graph', 'list'].map(id => (
-          <button className={`sidebar-tab ${tab === id ? 'active' : ''}`} key={id} type="button" onClick={() => setTab(id)}>
-            {id === 'graph' ? 'Graph' : 'List'}
+      <div className="sidebar-tabs" role="tablist">
+        {[['graph', 'Graph'], ['list', 'List']].map(([id, label]) => (
+          <button
+            className={`sidebar-tab ${tab === id ? 'active' : ''}`}
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+          >
+            {label}
           </button>
         ))}
       </div>
 
-      {tab === 'list' ? (
-        <>
-          <div className="list-search">
-            <Icon name="search" />
-            <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search..." />
-          </div>
-          <div className="filter-chips">
-            {['all', 'skills', 'startups', 'hackathons'].map(id => (
-              <button className={`chip ${listFilter === id ? 'active' : ''}`} key={id} type="button" onClick={() => setListFilter(id)}>
-                {id === 'all' ? 'All' : id[0].toUpperCase() + id.slice(1)}
-              </button>
-            ))}
-          </div>
-          <div className="sidebar-section">
-            {results.map(node => (
-              <Item
-                key={node.id}
-                label={node.label}
-                active={selectedId === node.id || activeMobileView === node.mobileView}
-                icon={<Icon name={node.icon} />}
-                onClick={() => {
-                  onSelectNode(node)
-                  if (node.mobileView) setActiveMobileView(node.mobileView)
-                }}
-              >
-                {node.score != null && <span className={`count-badge ${scoreClass(node.score)}`}>{node.score}%</span>}
-              </Item>
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="sidebar-section">
-            <p className="section-header">Overview</p>
-            <Item
-              active={selectedId === 'user'}
-              label="Your Profile"
-              icon={<Icon name="user" />}
-              onClick={() => onSelectNode(graph.nodeMap.get('user'))}
-            />
-            <div className="sidebar-stack" style={{ padding: '0 12px 6px 36px' }}>
-              {knownSkills.slice(0, 3).join(' · ')}
+      <div className="sidebar-scroll">
+        {tab === 'list' ? (
+          <>
+            <div className="list-search">
+              <Icon name="search" />
+              <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search nodes..." />
             </div>
-            <Item
-              label="Roadmap Journey"
-              active={rightPanel === 'journey'}
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sidebar-icon">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-                </svg>
-              }
-              onClick={() => onSetRightPanel && onSetRightPanel(rightPanel === 'journey' ? null : 'journey')}
-            />
-          </div>
-
-          <div className="sidebar-section">
-            <p className="section-header">Skills</p>
-            <Item label="Known" icon={<Icon name="skill" />} onClick={() => setActiveMobileView('gaps')}>
-              <span className="count-badge success">{knownSkills.length}</span>
-            </Item>
-            {knownSkills.slice(0, 7).map(skill => (
-              <Item
-                indent
-                key={skill}
-                label={skill}
-                active={selectedId === `skill-known:${skill}`}
-                icon={<span className="dot known" />}
-                onClick={() => onSelectNode(graph.nodeMap.get(`skill-known:${skill}`))}
+            <div className="filter-chips">
+              {['all', 'skills', 'startups', 'hackathons'].map(id => (
+                <button className={`chip ${listFilter === id ? 'active' : ''}`} key={id} type="button" onClick={() => setListFilter(id)}>
+                  {id === 'all' ? 'All' : id[0].toUpperCase() + id.slice(1)}
+                </button>
+              ))}
+            </div>
+            <Section title="Results" count={results.length}>
+              {results.map(node => (
+                <Row key={node.id} detail={node} focusId={focusId} onFocusNode={onFocusNode} mark={<Icon name={node.icon} />} />
+              ))}
+              {!results.length && <li className="nav-empty">No nodes match “{query}”.</li>}
+            </Section>
+          </>
+        ) : (
+          <>
+            <Section title="Profile" count={knownSkills.length + gapSkills.length}>
+              <Row
+                detail={get('user')}
+                focusId={focusId}
+                onFocusNode={onFocusNode}
+                mark={<Icon name="user" />}
               />
-            ))}
-            <Item label="To Learn" icon={<Icon name="gap" />} onClick={() => setActiveMobileView('gaps')}>
-              <span className="count-badge danger">{gapSkills.length}</span>
-            </Item>
-            {gapSkills.slice(0, 7).map(skill => (
-              <Item
-                indent
-                key={skill.skill}
-                label={skill.skill}
-                active={selectedId === `skill-gap:${skill.skill}`}
-                icon={<span className="dot gap" />}
-                onClick={() => onSelectNode(graph.nodeMap.get(`skill-gap:${skill.skill}`))}
-              />
-            ))}
-          </div>
+              <li className="nav-note">{knownSkills.slice(0, 3).join(' · ') || 'No stack yet'}</li>
+            </Section>
 
-          <div className="sidebar-section">
-            <p className="section-header">Startups</p>
-            {startups.slice(0, 8).map(startup => {
-              const score = startup.claude_analysis?.match_percentage ?? startup.match_score ?? 0
-              return (
-                <Item
+            <Section title="Skills you have" count={knownSkills.length}>
+              {knownSkills.map(skill => (
+                <Row
+                  key={skill}
+                  detail={get(`skill-known:${skill}`)}
+                  focusId={focusId}
+                  onFocusNode={onFocusNode}
+                  mark={<span className="row-swatch row-swatch--skill" />}
+                />
+              ))}
+            </Section>
+
+            <Section title="Gaps to close" count={gapSkills.length}>
+              {gapSkills.map(gap => (
+                <Row
+                  key={gap.skill}
+                  detail={get(`skill-gap:${gap.skill}`)}
+                  focusId={focusId}
+                  onFocusNode={onFocusNode}
+                  mark={<span className="row-swatch row-swatch--gap" />}
+                />
+              ))}
+              {!gapSkills.length && <li className="nav-empty">No gaps found yet.</li>}
+            </Section>
+
+            <Section title="Companies" count={startups.length}>
+              {startups.map(startup => (
+                <Row
                   key={startup.id}
-                  label={startup.name}
-                  active={selectedId === `startup:${startup.id}` || activeMobileView === 'startups'}
-                  icon={<Icon name="startup" />}
-                  onClick={() => {
-                    onSelectNode(graph.nodeMap.get(`startup:${startup.id}`))
-                    setActiveMobileView('startups')
-                  }}
-                >
-                  <span className={`count-badge ${scoreClass(score)}`}>{score}%</span>
-                </Item>
-              )
-            })}
-          </div>
+                  detail={get(`startup:${startup.id}`)}
+                  focusId={focusId}
+                  onFocusNode={onFocusNode}
+                  mark={<span className="row-swatch row-swatch--company" />}
+                />
+              ))}
+            </Section>
 
-          <div className="sidebar-section">
-            <p className="section-header">Hackathons</p>
-            {hackathons.slice(0, 7).map(hackathon => {
-              const days = daysUntil(hackathon.deadline)
-              return (
-                <Item
+            <Section title="Hackathons" count={hackathons.length}>
+              {hackathons.map(hackathon => (
+                <Row
                   key={hackathon.id}
-                  label={hackathon.name}
-                  active={selectedId === `hackathon:${hackathon.id}` || activeMobileView === 'hackathons'}
-                  icon={<Icon name="hackathon" />}
-                  onClick={() => {
-                    onSelectNode(graph.nodeMap.get(`hackathon:${hackathon.id}`))
-                    setActiveMobileView('hackathons')
-                  }}
-                >
-                  {days < 14 && <span className="count-badge danger">{days} days</span>}
-                </Item>
-              )
-            })}
-          </div>
-        </>
-      )}
+                  detail={get(`hackathon:${hackathon.id}`)}
+                  focusId={focusId}
+                  onFocusNode={onFocusNode}
+                  mark={<span className="row-swatch row-swatch--hackathon" />}
+                />
+              ))}
+            </Section>
+          </>
+        )}
+      </div>
 
       {onSetRightPanel && (
         <div className="sidebar-actions">
@@ -277,12 +268,11 @@ export default function Sidebar({
       )}
 
       <div className="sidebar-bottom">
-        <p className="caption">{graph.nodes.length} nodes Â· {graph.edges.length} connections</p>
-        <div className="memory-active"><span className="pulse-dot" /> HydraDB active</div>
+        <p className="caption">{graph.nodes.length} nodes · {graph.edges.length} connections</p>
+        <div className="memory-active"><span className="pulse-dot" /> memory active</div>
       </div>
 
       <ThemeSwitcher />
     </aside>
   )
 }
-

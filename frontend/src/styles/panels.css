@@ -1,0 +1,465 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PANELS — BLUEPRINT LEDGER
+   Styling for the components converted off inline style objects: the wiki browser,
+   the journey timeline, the logo marks, and the graph crosshair readout.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tone map ────────────────────────────────────────────────────────────────
+   One place that turns a semantic tone into a colour. Components set
+   data-tone="blue|accent|ochre|moss|ink" and never touch a hex. */
+
+[data-tone='accent'] { --tone: var(--accent); --tone-bg: var(--accent-bg); }
+[data-tone='blue']   { --tone: var(--blue);   --tone-bg: var(--blue-bg); }
+[data-tone='ochre']  { --tone: var(--ochre);  --tone-bg: var(--ochre-bg); }
+[data-tone='moss']   { --tone: var(--moss);   --tone-bg: var(--moss-bg); }
+[data-tone='ink']    { --tone: var(--ink);    --tone-bg: var(--bg-surface1); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOGO
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.logo-mark { display: block; }
+
+.logo-blip { animation: blink-mark 1.4s steps(1, end) infinite; }
+
+.logo-text {
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.logo-text--lg { font-size: clamp(30px, 5vw, 60px); }
+.logo-text--md { font-size: clamp(20px, 3vw, 32px); }
+.logo-text--sm { font-size: clamp(15px, 2vw, 20px); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GRAPH CROSSHAIR READOUT
+   A drafting-table cursor: the pointer becomes a crosshair and its coordinates
+   are printed in the corner, like an instrument panel.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.graph-crosshair {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.graph-crosshair-x,
+.graph-crosshair-y {
+  position: absolute;
+  background: var(--accent);
+  opacity: 0.45;
+}
+.graph-crosshair-x { left: 0; right: 0; height: 1px; }
+.graph-crosshair-y { top: 0; bottom: 0; width: 1px; }
+
+.graph-readout {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 13;
+  display: flex;
+  gap: 10px;
+  padding: 5px 9px;
+  background: var(--ink);
+  color: var(--bg-base);
+  border: var(--rule-width) solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.graph-readout-k { opacity: 0.55; }
+
+.graph-network { cursor: crosshair; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WIKI PANEL
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.wiki-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+.wiki-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: var(--rule-width) solid var(--ink);
+}
+
+.wiki-search {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--bg-surface0);
+  border: var(--rule-width) solid var(--ink);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  outline: none;
+}
+.wiki-search::placeholder { color: var(--ink-4); }
+.wiki-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.wiki-refresh {
+  padding: 6px 11px;
+  background: var(--bg-surface0);
+  border: var(--rule-width) solid var(--ink);
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: var(--shadow-block-sm);
+  transition: box-shadow var(--dur-fast) var(--ease-mech), transform var(--dur-fast) var(--ease-mech);
+}
+.wiki-refresh:hover { box-shadow: none; transform: translate(2px, 2px); }
+
+.wiki-filters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-bottom: var(--rule-width) solid var(--ink);
+}
+
+.wiki-filter {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: var(--rule-width) solid var(--border-hair);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-mech), color var(--dur-fast) var(--ease-mech);
+}
+.wiki-filter:hover { border-color: var(--ink); color: var(--ink); }
+.wiki-filter.is-active {
+  background: var(--tone, var(--ink));
+  border-color: var(--ink);
+  color: var(--bg-base);
+}
+
+.wiki-body { flex: 1; display: flex; min-height: 0; }
+
+.wiki-list { width: 100%; overflow-y: auto; }
+.wiki-list.is-split {
+  width: 38%;
+  flex-shrink: 0;
+  border-right: var(--rule-width) solid var(--ink);
+}
+
+.wiki-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: var(--rule-width) solid var(--border-hair);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-mech);
+}
+.wiki-row:hover { background: var(--bg-mantle); }
+.wiki-row.is-selected {
+  background: var(--bg-surface0);
+  border-left-color: var(--tone, var(--accent));
+}
+
+.wiki-row-glyph { flex-shrink: 0; font-size: 13px; color: var(--tone, var(--ink)); }
+
+.wiki-row-main { min-width: 0; flex: 1; display: block; }
+
+.wiki-row-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wiki-row-meta {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-4);
+  margin-top: 2px;
+  letter-spacing: 0.04em;
+}
+
+.wiki-status { padding: 16px; font-size: 12px; color: var(--ink-3); }
+.wiki-status.is-error { color: var(--accent); }
+
+.wiki-empty { padding: 20px; text-align: center; }
+.wiki-empty-title { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+.wiki-empty-body { font-size: 11px; color: var(--ink-4); }
+
+/* ── Document ────────────────────────────────────────────────────────────── */
+
+.wiki-doc { flex: 1; min-width: 0; overflow-y: auto; padding: 14px 16px; }
+
+.wiki-back {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.wiki-back:hover { color: var(--accent); }
+
+.wiki-source {
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: var(--rule-width) solid var(--border-hair);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-4);
+  word-break: break-all;
+}
+
+.wiki-space { height: 8px; }
+
+.wiki-h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.wiki-h3 {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  margin: 20px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: var(--rule-width) solid var(--ink);
+}
+
+.wiki-h4 {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  margin: 16px 0 4px;
+}
+
+.wiki-p { font-size: 13px; color: var(--ink-2); line-height: 1.65; margin: 4px 0; }
+
+.wiki-li { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; }
+.wiki-li-mark {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin-top: 7px;
+  background: var(--accent);
+}
+.wiki-li-text { font-size: 13px; color: var(--ink-2); line-height: 1.6; }
+
+.wiki-task { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; }
+.wiki-task-box {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  margin-top: 3px;
+  border: var(--rule-width) solid var(--ink);
+  background: var(--bg-surface0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 11px;
+  text-align: center;
+  color: var(--accent);
+}
+.wiki-task-text { font-size: 13px; color: var(--ink-2); line-height: 1.6; }
+.wiki-task.is-done .wiki-task-text { color: var(--ink-4); text-decoration: line-through; }
+
+.wiki-rule { border: none; border-top: var(--rule-width) solid var(--border-hair); margin: 12px 0; }
+
+.wiki-pre {
+  padding: 8px 10px;
+  margin: 8px 0;
+  background: var(--bg-mantle);
+  border: var(--rule-width) solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  overflow-x: auto;
+}
+
+.wiki-strong { color: var(--ink); font-weight: 700; }
+
+.wiki-code {
+  padding: 1px 5px;
+  background: var(--bg-mantle);
+  border: var(--rule-width) solid var(--border-hair);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--ink);
+}
+
+.wiki-link {
+  color: var(--blue);
+  font-weight: 600;
+  box-shadow: inset 0 -1px 0 var(--blue);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   JOURNEY VIEW
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.journey-view { padding: 14px 16px; overflow-y: auto; height: 100%; }
+
+.journey-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: var(--rule-width) solid var(--ink);
+}
+
+.journey-heading {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.journey-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.journey-loading { display: flex; flex-direction: column; align-items: center; padding: 40px 16px; }
+.journey-loading-text { margin-top: 12px; font-size: 13px; color: var(--ink-3); }
+.journey-error { padding: 16px; font-size: 13px; color: var(--accent); }
+
+.journey-list { display: flex; flex-direction: column; }
+
+.journey-entry { display: flex; gap: 12px; }
+
+.journey-line { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+
+.journey-dot {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--tone, var(--ink));
+  border: var(--rule-width) solid var(--ink);
+  color: var(--bg-base);
+}
+
+.journey-dot-glyph { font-size: 11px; line-height: 1; }
+
+.journey-connector { flex: 1; width: 1px; background: var(--border-hair); }
+.journey-entry:last-child .journey-connector { background: transparent; }
+
+.journey-card {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--bg-surface0);
+  border: var(--rule-width) solid var(--ink);
+  box-shadow: var(--shadow-block-sm);
+}
+
+.journey-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.journey-type-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  background: var(--tone-bg, var(--bg-surface1));
+  border: var(--rule-width) solid var(--tone, var(--ink));
+  color: var(--ink);
+}
+
+.journey-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+
+.journey-title { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.45; }
+.journey-desc { font-size: 12px; color: var(--ink-3); line-height: 1.55; margin-top: 3px; }
+
+.journey-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+
+.journey-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border: var(--rule-width) solid var(--tone, var(--ink));
+  color: var(--ink-2);
+}
+
+.journey-empty { padding: 24px 16px; text-align: center; }
+.journey-empty-mark { font-size: 34px; color: var(--ink-4); margin-bottom: 12px; }
+.journey-empty-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.journey-empty-body { font-size: 12px; color: var(--ink-3); line-height: 1.6; }
+
+.journey-tips { display: flex; flex-direction: column; gap: 6px; margin-top: 20px; text-align: left; }
+
+.journey-tip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-surface0);
+  border: var(--rule-width) solid var(--ink);
+  border-left: 3px solid var(--tone, var(--ink));
+}
+
+.journey-tip-icon { font-size: 13px; color: var(--tone, var(--ink)); }
+.journey-tip-text { font-size: 12px; color: var(--ink-2); }
+
+/* Classes flagged by the coverage audit. */
+.grafted-mark { display: block; flex-shrink: 0; }
+.wiki-doc-body { display: block; }
+.week-section { margin-bottom: 14px; }

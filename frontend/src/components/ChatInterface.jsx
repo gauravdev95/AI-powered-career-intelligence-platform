@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import axios from '../lib/api.js'
+import axios, { aiRequest } from '../lib/api.js'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
@@ -11,11 +11,23 @@ const SUGGESTED_QUESTIONS = [
   'Which startup is the best fit for me?',
 ]
 
+// Why a reply is canned rather than generated. Phrased so the user knows whether
+// waiting helps, and that the rest of the app is unaffected either way.
+const DEGRADED_LABEL = {
+  rate_limited: 'AI quota reached — this is a stock reply, not a generated one. Your memory, matches and search still work.',
+  unconfigured: 'No AI key configured — this is a stock reply. Matching and memory search work without one.',
+  unavailable: 'The AI provider could not be reached — this is a stock reply.',
+  no_context: 'Nothing in your wiki matches this yet. Ingest a job post or URL, then ask again.',
+}
+
 function Message({ msg }) {
   return (
     <div className={`chat-message ${msg.role}`}>
       <div className="chat-bubble">
         <p className="chat-text">{msg.content}</p>
+        {msg.degraded && DEGRADED_LABEL[msg.degraded] && (
+          <p className="chat-degraded">{DEGRADED_LABEL[msg.degraded]}</p>
+        )}
         {msg.citations?.length > 0 && (
           <div className="chat-citations">
             {msg.citations.map(c => (
@@ -60,12 +72,16 @@ export default function ChatInterface({ userId, userStack, wikiPageCount }) {
         userId,
         question: q,
         userStack,
-      })
+      }, aiRequest())
 
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: data.answer,
         citations: data.citations ?? [],
+        // The API answers even when the model is rate-limited or unconfigured, using
+        // a canned reply. Marking it keeps the user from reading a fallback as if it
+        // were a real, memory-grounded answer.
+        degraded: data.degraded ?? null,
         time: now(),
       }])
     } catch (err) {

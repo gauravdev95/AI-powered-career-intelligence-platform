@@ -15,7 +15,7 @@ export default function ReturningScreen({ returnContext, onContinue, waking = fa
   const name    = returnContext?.name ?? ''
   const stack   = returnContext?.stack ?? []
   const learning = returnContext?.learning_stack ?? []
-  const message = returnContext?.message ?? 'HydraDB remembers your career journey.'
+  const message = returnContext?.message ?? 'Your career memory has been restored.'
 
   // Build a short "last active" phrase
   const lastVisit = returnContext?.lastVisit
@@ -62,7 +62,7 @@ export default function ReturningScreen({ returnContext, onContinue, waking = fa
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 }}
         >
           <DevRadarLogo size={28} />
-          <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.4px' }}>devradar</span>
+          <span className="brand-word">grafted</span>
         </button>
 
         <h2 className="opening-heading" style={{ marginBottom: 6 }}>
@@ -149,7 +149,7 @@ export default function ReturningScreen({ returnContext, onContinue, waking = fa
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16 }}>
           <span className="pulse-dot animate-pulse-dot" />
           <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>
-            HydraDB memory loaded{lastActive ? ` · ${lastActive}` : ''}
+            Career memory loaded{lastActive ? ` · ${lastActive}` : ''}
           </span>
         </div>
       </div>

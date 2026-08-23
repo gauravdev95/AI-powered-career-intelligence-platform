@@ -1,0 +1,519 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GRAFTED — WORKSPACE
+   The app shell's own surfaces: focus breadcrumb, canvas lane captions, the
+   sidebar index, and the detail panel's labelled meters.
+
+   Every colour is a token from blueprint-tokens.css. Blueprint Ledger rules hold
+   throughout: zero radius, 1px ink rules, hard offset blocks that press down on
+   hover, hard focus outlines, and 180–240ms stepped motion.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOCUS BREADCRUMB
+   Sits between the topbar and the canvas. The trail is the navigation model —
+   the canvas shows one neighbourhood at a time, and this is how you get back.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.graph-breadcrumb {
+  position: absolute;
+  top: var(--topbar-height);
+  left: 0;
+  right: 0;
+  z-index: 19;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: var(--crumb-height);
+  padding: 0 16px;
+  border-bottom: var(--rule-width) solid var(--border-hair);
+  background: var(--bg-base);
+}
+
+.crumb-list {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.crumb-list::-webkit-scrollbar { display: none; }
+
+.crumb {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.crumb-sep {
+  padding: 0 6px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.crumb-btn {
+  height: 22px;
+  max-width: 190px;
+  padding: 0 8px;
+  border: var(--rule-width) solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--dur-fast) var(--ease-mech), border-color var(--dur-fast) var(--ease-mech);
+}
+
+.crumb-btn:hover {
+  border-color: var(--border-hair);
+  color: var(--text);
+}
+
+.crumb-btn.is-current {
+  border-color: var(--ink);
+  background: var(--bg-surface0);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: var(--shadow-press);
+}
+
+/* The trail is colour-keyed to the node type, so the path reads at a glance. */
+.crumb-btn--skill_known.is-current { border-left: 3px solid var(--node-skill); }
+.crumb-btn--skill_gap.is-current   { border-left: 3px solid var(--node-gap); }
+.crumb-btn--startup.is-current     { border-left: 3px solid var(--node-company); }
+.crumb-btn--hackathon.is-current   { border-left: 3px solid var(--node-hackathon); }
+.crumb-btn--user.is-current        { border-left: 3px solid var(--accent); }
+
+.crumb-note {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CANVAS LANE CAPTIONS
+   Only drawn for the split layouts (company / event focus), where the left–right
+   division carries the answer and colour alone would under-state it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.focus-lane {
+  position: absolute;
+  top: 50%;
+  z-index: 14;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 9px;
+  border: var(--rule-width) solid var(--ink);
+  background: var(--bg-surface0);
+  box-shadow: var(--shadow-block-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.focus-lane--left  { left: 18px; }
+.focus-lane--right { right: 18px; }
+
+.focus-lane--skill_known { border-left: 3px solid var(--node-skill); color: var(--node-skill); }
+.focus-lane--skill_gap   { border-left: 3px solid var(--node-gap); color: var(--node-gap); }
+.focus-lane--startup     { border-left: 3px solid var(--node-company); color: var(--node-company); }
+.focus-lane--hackathon   { border-left: 3px solid var(--node-hackathon); color: var(--node-hackathon); }
+
+.focus-lane-count {
+  padding-left: 8px;
+  border-left: var(--rule-width) solid var(--border-hair);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIDEBAR — BRAND
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.brand-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.brand-word {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.brand-tagline {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIDEBAR — INDEX
+   A table, not a tree: mark · label · score, on a fixed three-column grid so the
+   score column stays flush no matter how long the labels get.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
+.nav-section { padding: 0 0 10px; }
+
+.nav-section-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 7px 12px 6px;
+  border-bottom: var(--rule-width) solid var(--border-hair);
+  background: var(--bg-mantle);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.nav-section-title { color: var(--text-muted); }
+
+.nav-section-count {
+  padding: 0 5px;
+  background: var(--bg-crust);
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.nav-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background var(--dur-fast) var(--ease-mech),
+    color var(--dur-fast) var(--ease-mech),
+    border-color var(--dur-fast) var(--ease-mech);
+}
+
+.nav-row:hover {
+  background: var(--bg-surface1);
+  color: var(--text);
+}
+
+/* Selected row = the node at the centre of the canvas. One state, one source. */
+.nav-row.is-current {
+  border-left-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.row-mark {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  color: var(--text-faint);
+}
+
+.row-mark svg { width: 14px; height: 14px; }
+
+.nav-row.is-current .row-mark { color: var(--accent); }
+
+/* Type swatches keep the graph's semantic contract in the list. */
+.row-swatch {
+  width: 9px;
+  height: 9px;
+  border: var(--rule-width) solid var(--ink);
+}
+
+.row-swatch--skill     { background: var(--node-skill); }
+.row-swatch--gap       { background: var(--node-gap); }
+.row-swatch--company   { background: var(--node-company); }
+.row-swatch--hackathon { background: var(--node-hackathon); }
+
+.row-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.row-score {
+  min-width: 38px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
+.row-score--moss   { color: var(--moss); }
+.row-score--blue   { color: var(--blue); }
+.row-score--ochre  { color: var(--ochre); }
+.row-score--danger { color: var(--accent); }
+.row-score--muted,
+.row-score--empty  { color: var(--text-faint); }
+
+.nav-note {
+  padding: 2px 12px 6px 38px;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.nav-empty {
+  padding: 8px 12px;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DETAIL PANEL — METERS
+   No bare 0–100 bar exists in this app. A meter always states its subject, its
+   value and its unit above the track.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.meter { display: grid; gap: 6px; }
+
+.meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.meter-label {
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.meter-value {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.meter-max {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.meter-track {
+  height: 8px;
+  border: var(--rule-width) solid var(--ink);
+  background: var(--bg-surface1);
+}
+
+.meter-fill {
+  height: 100%;
+  transition: width var(--dur-slow) var(--ease-mech);
+}
+
+.meter-fill--moss   { background: var(--moss); }
+.meter-fill--blue   { background: var(--blue); }
+.meter-fill--ochre  { background: var(--ochre); }
+.meter-fill--accent { background: var(--accent); }
+
+.meter-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DETAIL PANEL — HAVE / MISSING SPLIT
+   Mirrors the canvas layout: covered on the left, missing on the right.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.split-col { min-width: 0; }
+
+.split-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0 0 7px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--border-hair);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.split-head--have    { border-bottom-color: var(--node-skill); color: var(--node-skill); }
+.split-head--missing { border-bottom-color: var(--node-gap); color: var(--node-gap); }
+
+.split-n {
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DETAIL PANEL — SMALL PARTS
+   Replaces the inline style objects that used to live in DetailPanel.jsx.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.panel-prose {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.panel-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pill-row--spaced { margin-bottom: 12px; }
+
+.val-moss   { color: var(--moss); }
+.val-accent { color: var(--accent); }
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   APP SHELL — BANNERS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.app-banners {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.waking-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-bottom: var(--rule-width) solid var(--warning-border);
+  background: var(--warning-bg);
+}
+
+.waking-mark { font-size: 13px; }
+
+.waking-copy {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.waking-copy strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.app-error {
+  margin: 0;
+  padding: 8px 20px;
+  border-bottom: var(--rule-width) solid var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 12px;
+  text-align: center;
+}
+
+.loading-title { margin-bottom: 8px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   Below 1100px the panel overlays instead of adding a column; below 860px the
+   sidebar becomes the slide-in overlay and the breadcrumb keeps its own row.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .focus-lane {
+    top: auto;
+    bottom: 74px;
+    transform: none;
+    font-size: 9px;
+  }
+  .focus-lane--left  { left: 10px; }
+  .focus-lane--right { right: 10px; }
+
+  .crumb-btn { max-width: 120px; }
+  .crumb-note { display: none; }
+}

@@ -1,25 +1,35 @@
 {
-  "name": "devradar-backend",
-  "version": "1.0.0",
-  "description": "DevRadar backend - AI-powered developer career intelligence with HydraDB memory",
+  "name": "grafted-backend",
+  "version": "2.0.0",
+  "description": "Grafted backend — Career Memory Engine on PostgreSQL + pgvector with Gemini",
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "build": "node --check server.js",
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "health": "node -e \"fetch('http://localhost:' + (process.env.PORT || 3001) + '/api/health').then(r => r.json()).then(console.log)\""
+    "build": "node --check server.js",
+    "test": "node --env-file=tests/.env.test --test --test-timeout=180000 tests/",
+    "test:watch": "node --env-file=tests/.env.test --test --watch tests/",
+    "data:check": "node scripts/check-data-links.js",
+    "db:migrate": "node db/migrate.js",
+    "db:reset": "node db/migrate.js --reset",
+    "health": "node -e \"fetch('http://localhost:' + (process.env.PORT || 3001) + '/api/health').then(r => r.json()).then(o => console.log(JSON.stringify(o, null, 2)))\""
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "node-fetch": "^3.3.2",
+    "pg": "^8.13.0",
     "turndown": "^7.2.4",
     "uuid": "^10.0.0"
   },
+  "optionalDependencies": {
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.0"
+  },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.6.0"
   }
 }

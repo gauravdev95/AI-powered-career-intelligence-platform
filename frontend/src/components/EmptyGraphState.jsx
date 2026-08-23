@@ -20,7 +20,7 @@ export default function EmptyGraphState({ onIngest, onStartups, onHackathons }) 
 
         <h2 className="empty-graph-title">Your graph is ready to grow</h2>
         <p className="empty-graph-body">
-          Feed DevRadar some data and it will map your career universe — startups, skills, gaps, and hackathons — into a live knowledge graph.
+          Feed Grafted some data and it will graft your career onto a live knowledge graph — startups, skills, gaps and hackathons, all held together.
         </p>
 
         {/* Action cards */}

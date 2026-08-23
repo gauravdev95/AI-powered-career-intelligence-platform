@@ -5,7 +5,7 @@
     "type": "Fintech",
     "stage": "Unicorn",
     "location": "Bangalore",
-    "description": "India's leading payment gateway powering payments for 10M+ businesses.",
+    "description": "India's leading payment gateway, powering online payments, payouts and neobanking for millions of businesses.",
     "hiring": true,
     "skills_required": ["Node.js", "React", "TypeScript", "Java", "PostgreSQL"],
     "nice_to_have": ["GraphQL", "Redis", "Kafka"],
@@ -14,8 +14,7 @@
     "salary_range_lpa": "18-32",
     "interview_topics": ["DSA", "System Design", "Low-Level Design"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["ETHIndia", "Devfolio Season 10"],
-    "apply_url": "https://razorpay.com/jobs"
+    "apply_url": "https://razorpay.com/careers/"
   },
   {
     "id": "zepto",
@@ -23,7 +22,7 @@
     "type": "Quick Commerce",
     "stage": "Unicorn",
     "location": "Mumbai",
-    "description": "10-minute grocery delivery platform redefining instant commerce in India.",
+    "description": "10-minute grocery delivery platform built on a dense dark-store network across Indian metros.",
     "hiring": true,
     "skills_required": ["React Native", "Go", "Python", "Redis", "Kafka"],
     "nice_to_have": ["Kubernetes", "PostgreSQL", "gRPC"],
@@ -32,7 +31,6 @@
     "salary_range_lpa": "20-35",
     "interview_topics": ["DSA", "System Design", "Distributed Systems"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["HackerEarth February Sprint"],
     "apply_url": "https://www.zeptonow.com/careers"
   },
   {
@@ -41,7 +39,7 @@
     "type": "Fintech",
     "stage": "Unicorn",
     "location": "Bangalore",
-    "description": "Exclusive platform rewarding creditworthy Indians for paying bills on time.",
+    "description": "Members-only platform rewarding creditworthy Indians for paying credit-card bills, now spanning payments and lending.",
     "hiring": true,
     "skills_required": ["Kotlin", "React Native", "Python", "Apache Spark", "PostgreSQL"],
     "nice_to_have": ["Swift", "TensorFlow", "Redis"],
@@ -50,16 +48,15 @@
     "salary_range_lpa": "22-40",
     "interview_topics": ["DSA", "Android Internals", "System Design"],
     "interview_rounds": 5,
-    "hackathons_sponsored": ["Devfolio Season 10"],
     "apply_url": "https://careers.cred.club"
   },
   {
     "id": "groww",
     "name": "Groww",
     "type": "Fintech",
-    "stage": "Unicorn",
+    "stage": "Listed",
     "location": "Bangalore",
-    "description": "India's fastest-growing investment platform for stocks, MFs and digital gold.",
+    "description": "Retail investment platform for stocks, mutual funds and derivatives; one of India's largest brokers by active users.",
     "hiring": true,
     "skills_required": ["React", "Java", "Spring Boot", "PostgreSQL", "Python"],
     "nice_to_have": ["Airflow", "Kafka", "Redis"],
@@ -68,16 +65,15 @@
     "salary_range_lpa": "16-28",
     "interview_topics": ["DSA", "OOP", "System Design"],
     "interview_rounds": 3,
-    "hackathons_sponsored": ["Smart India Hackathon 2026"],
     "apply_url": "https://groww.in/careers"
   },
   {
     "id": "meesho",
     "name": "Meesho",
     "type": "E-Commerce",
-    "stage": "Unicorn",
+    "stage": "Listed",
     "location": "Bangalore",
-    "description": "Social commerce platform enabling 1M+ small businesses to sell online.",
+    "description": "Zero-commission marketplace built for value-conscious shoppers and small sellers in tier-2 and tier-3 India.",
     "hiring": true,
     "skills_required": ["React", "Python", "Go", "PostgreSQL", "Kafka"],
     "nice_to_have": ["TensorFlow", "Spark", "Kubernetes"],
@@ -86,8 +82,7 @@
     "salary_range_lpa": "18-30",
     "interview_topics": ["DSA", "ML Fundamentals", "System Design"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["Flipkart Grid 6.0"],
-    "apply_url": "https://meesho.io/jobs"
+    "apply_url": "https://www.meesho.io/jobs"
   },
   {
     "id": "phonepe",
@@ -95,7 +90,7 @@
     "type": "Fintech",
     "stage": "Unicorn",
     "location": "Bangalore",
-    "description": "India's #1 UPI payments app with 500M+ registered users.",
+    "description": "India's largest UPI payments app, expanding into insurance, lending, wealth and the Indus app store.",
     "hiring": true,
     "skills_required": ["Java", "Spring Boot", "React", "MySQL", "Kafka"],
     "nice_to_have": ["Redis", "Kubernetes", "gRPC"],
@@ -104,7 +99,6 @@
     "salary_range_lpa": "20-36",
     "interview_topics": ["DSA", "System Design", "Database Design"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["AngelHack Global 2026"],
     "apply_url": "https://www.phonepe.com/careers"
   },
   {
@@ -113,7 +107,7 @@
     "type": "Food Delivery",
     "stage": "Listed",
     "location": "Bangalore",
-    "description": "India's leading food ordering and delivery platform with Instamart and Dineout.",
+    "description": "Food ordering and delivery platform, also running Instamart quick commerce and Dineout.",
     "hiring": true,
     "skills_required": ["Python", "Go", "React", "PostgreSQL", "Kafka"],
     "nice_to_have": ["Kubernetes", "Redis", "Elasticsearch"],
@@ -122,7 +116,6 @@
     "salary_range_lpa": "18-32",
     "interview_topics": ["DSA", "System Design", "ML Basics"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["Unstop Tech Hackathon"],
     "apply_url": "https://careers.swiggy.com"
   },
   {
@@ -131,7 +124,7 @@
     "type": "Food Delivery",
     "stage": "Listed",
     "location": "Gurugram",
-    "description": "India's largest restaurant discovery and food delivery platform.",
+    "description": "Restaurant discovery and food delivery brand. The parent company renamed itself Eternal Limited in March 2025; Zomato, Blinkit, District and Hyperpure all hire through the Eternal careers site.",
     "hiring": true,
     "skills_required": ["Python", "React", "Node.js", "PostgreSQL", "Redis"],
     "nice_to_have": ["Spark", "Airflow", "Docker"],
@@ -140,8 +133,7 @@
     "salary_range_lpa": "16-28",
     "interview_topics": ["DSA", "System Design", "SQL"],
     "interview_rounds": 3,
-    "hackathons_sponsored": ["HackRx 6.0"],
-    "apply_url": "https://www.zomato.com/careers"
+    "apply_url": "https://www.eternal.com/careers/"
   },
   {
     "id": "ola",
@@ -149,7 +141,7 @@
     "type": "Mobility",
     "stage": "Unicorn",
     "location": "Bangalore",
-    "description": "India's largest ride-hailing platform expanding into EVs and financial services.",
+    "description": "Ride-hailing platform for cars, autos and bikes, with sister companies in electric vehicles and financial services.",
     "hiring": true,
     "skills_required": ["Python", "Java", "React Native", "PostgreSQL", "Kafka"],
     "nice_to_have": ["Go", "Kubernetes", "Redis"],
@@ -158,7 +150,6 @@
     "salary_range_lpa": "15-26",
     "interview_topics": ["DSA", "System Design", "OOP"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["Unstop Tech Hackathon"],
     "apply_url": "https://www.olacabs.com/careers"
   },
   {
@@ -167,7 +158,7 @@
     "type": "E-Commerce",
     "stage": "Listed",
     "location": "Mumbai",
-    "description": "India's leading omnichannel beauty and fashion retailer with 35M+ users.",
+    "description": "Omnichannel beauty and fashion retailer running its own marketplace, private labels and physical stores.",
     "hiring": true,
     "skills_required": ["React", "Node.js", "Python", "MongoDB", "AWS"],
     "nice_to_have": ["React Native", "Redis", "Elasticsearch"],
@@ -176,7 +167,6 @@
     "salary_range_lpa": "12-22",
     "interview_topics": ["DSA", "Web Performance", "System Design"],
     "interview_rounds": 3,
-    "hackathons_sponsored": ["HackerEarth February Sprint"],
     "apply_url": "https://careers.nykaa.com"
   },
   {
@@ -185,7 +175,7 @@
     "type": "EdTech",
     "stage": "Unicorn",
     "location": "Bangalore",
-    "description": "India's largest learning platform with 60M+ learners and 80K+ educators.",
+    "description": "Live-learning platform for competitive exam preparation, with a large educator marketplace and video infrastructure of its own.",
     "hiring": true,
     "skills_required": ["React", "Python", "Django", "PostgreSQL", "Redis"],
     "nice_to_have": ["WebRTC", "Elasticsearch", "Kubernetes"],
@@ -194,7 +184,6 @@
     "salary_range_lpa": "14-24",
     "interview_topics": ["DSA", "System Design", "Django ORM"],
     "interview_rounds": 3,
-    "hackathons_sponsored": ["Google Solution Challenge 2026", "MLH Global Hack Week"],
     "apply_url": "https://unacademy.com/careers"
   },
   {
@@ -203,7 +192,7 @@
     "type": "Developer Tools",
     "stage": "Unicorn",
     "location": "Mumbai",
-    "description": "World's leading software testing platform used by 50K+ organisations.",
+    "description": "Cloud testing platform giving developers real browsers and devices on demand, used by tens of thousands of engineering teams.",
     "hiring": true,
     "skills_required": ["React", "TypeScript", "Ruby", "Python", "PostgreSQL"],
     "nice_to_have": ["Selenium", "AWS", "Node.js"],
@@ -212,7 +201,6 @@
     "salary_range_lpa": "18-32",
     "interview_topics": ["DSA", "Web Testing Fundamentals", "System Design"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["MLH Global Hack Week"],
     "apply_url": "https://www.browserstack.com/careers"
   },
   {
@@ -221,7 +209,7 @@
     "type": "Developer Tools",
     "stage": "Unicorn",
     "location": "Bangalore",
-    "description": "The world's leading API platform used by 30M+ developers globally.",
+    "description": "API development platform — client, collaboration workspace and API registry — used by developers worldwide.",
     "hiring": true,
     "skills_required": ["TypeScript", "React", "Node.js", "Go", "MongoDB"],
     "nice_to_have": ["Electron", "Kubernetes", "GraphQL"],
@@ -230,7 +218,6 @@
     "salary_range_lpa": "20-38",
     "interview_topics": ["DSA", "API Design", "System Design"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["Devfolio Season 10", "AngelHack Global 2026"],
     "apply_url": "https://www.postman.com/company/careers"
   },
   {
@@ -239,7 +226,7 @@
     "type": "SaaS",
     "stage": "Unicorn",
     "location": "Chennai",
-    "description": "Subscription billing and revenue management platform for SaaS businesses.",
+    "description": "Subscription billing and revenue management platform for SaaS and subscription businesses.",
     "hiring": true,
     "skills_required": ["React", "TypeScript", "Ruby", "Java", "MySQL"],
     "nice_to_have": ["Redis", "Node.js", "AWS"],
@@ -248,7 +235,6 @@
     "salary_range_lpa": "16-28",
     "interview_topics": ["DSA", "Database Design", "OOP"],
     "interview_rounds": 3,
-    "hackathons_sponsored": ["Microsoft Imagine Cup India"],
     "apply_url": "https://www.chargebee.com/careers"
   },
   {
@@ -257,7 +243,7 @@
     "type": "SaaS",
     "stage": "Listed",
     "location": "Chennai",
-    "description": "Cloud-based CRM and customer engagement software for businesses of all sizes.",
+    "description": "Nasdaq-listed customer-engagement software company behind Freshdesk, Freshservice and Freshsales.",
     "hiring": true,
     "skills_required": ["React", "Ruby on Rails", "Python", "Go", "PostgreSQL"],
     "nice_to_have": ["TypeScript", "Redis", "Kubernetes"],
@@ -266,16 +252,15 @@
     "salary_range_lpa": "14-26",
     "interview_topics": ["DSA", "OOP", "System Design"],
     "interview_rounds": 3,
-    "hackathons_sponsored": ["HackHarvard India Open", "Smart India Hackathon 2026"],
     "apply_url": "https://www.freshworks.com/company/careers"
   },
   {
     "id": "setu",
     "name": "Setu",
     "type": "Fintech Infra",
-    "stage": "Series B",
+    "stage": "Acquired (Pine Labs)",
     "location": "Bangalore",
-    "description": "API infrastructure layer connecting financial institutions with businesses.",
+    "description": "API infrastructure connecting financial institutions to businesses — account aggregation, UPI, KYC and lending rails. Acquired by Pine Labs, still hiring under its own brand.",
     "hiring": true,
     "skills_required": ["Python", "Node.js", "Go", "PostgreSQL", "TypeScript"],
     "nice_to_have": ["React", "Kubernetes", "AWS"],
@@ -284,16 +269,15 @@
     "salary_range_lpa": "14-24",
     "interview_topics": ["DSA", "API Design", "System Design"],
     "interview_rounds": 3,
-    "hackathons_sponsored": ["ETHIndia"],
     "apply_url": "https://setu.co/careers"
   },
   {
     "id": "slice",
-    "name": "Slice",
+    "name": "slice",
     "type": "Neobank",
-    "stage": "Series B",
+    "stage": "Licensed bank",
     "location": "Bangalore",
-    "description": "Gen-Z neobank offering credit cards, UPI and savings products for young Indians.",
+    "description": "Consumer fintech for young Indians — cards, UPI and savings. After merging with North East Small Finance Bank it now operates as a licensed bank, so its careers site sits on slice.bank.in.",
     "hiring": true,
     "skills_required": ["React Native", "Node.js", "Python", "PostgreSQL", "TypeScript"],
     "nice_to_have": ["Redis", "AWS", "Docker"],
@@ -302,16 +286,15 @@
     "salary_range_lpa": "12-22",
     "interview_topics": ["DSA", "Mobile Architecture", "REST APIs"],
     "interview_rounds": 3,
-    "hackathons_sponsored": ["Devfolio Season 10"],
-    "apply_url": "https://sliceit.com/careers"
+    "apply_url": "https://slice.bank.in/careers"
   },
   {
     "id": "fi",
-    "name": "Fi",
+    "name": "Fi Money",
     "type": "Neobank",
     "stage": "Series C",
     "location": "Bangalore",
-    "description": "Salary account and smart savings platform built for working millennials.",
+    "description": "Salary account, smart savings and investing app aimed at salaried millennials, built with Federal Bank.",
     "hiring": true,
     "skills_required": ["Kotlin", "React", "Node.js", "PostgreSQL", "AWS"],
     "nice_to_have": ["Swift", "Redis", "Kafka"],
@@ -320,7 +303,6 @@
     "salary_range_lpa": "14-26",
     "interview_topics": ["DSA", "Android Fundamentals", "System Design"],
     "interview_rounds": 3,
-    "hackathons_sponsored": ["HackerEarth February Sprint"],
     "apply_url": "https://fi.money/careers"
   },
   {
@@ -329,7 +311,7 @@
     "type": "Payments",
     "stage": "Series C",
     "location": "Bangalore",
-    "description": "Payment orchestration platform processing 50M+ transactions daily for top Indian banks.",
+    "description": "Payment orchestration and checkout infrastructure used by large Indian banks and merchants. Notable for building production systems in Haskell and PureScript.",
     "hiring": true,
     "skills_required": ["Haskell", "Java", "React", "PostgreSQL", "Redis"],
     "nice_to_have": ["PureScript", "Kafka", "Docker"],
@@ -338,8 +320,7 @@
     "salary_range_lpa": "16-30",
     "interview_topics": ["DSA", "Functional Programming", "System Design"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["ETHIndia"],
-    "apply_url": "https://juspay.in/careers"
+    "apply_url": "https://juspay.io/careers"
   },
   {
     "id": "hasura",
@@ -347,7 +328,7 @@
     "type": "Developer Tools",
     "stage": "Series C",
     "location": "Bangalore",
-    "description": "Instant GraphQL APIs over databases â€” open-source with 30K+ GitHub stars.",
+    "description": "Creators of the open-source Hasura GraphQL Engine. Since 2025 the company's focus has shifted to PromptQL, its AI data-access platform, and hiring runs through the PromptQL careers site.",
     "hiring": true,
     "skills_required": ["Go", "TypeScript", "React", "PostgreSQL", "GraphQL"],
     "nice_to_have": ["Haskell", "Kubernetes", "Docker"],
@@ -356,8 +337,6 @@
     "salary_range_lpa": "18-34",
     "interview_topics": ["DSA", "GraphQL Internals", "System Design"],
     "interview_rounds": 4,
-    "hackathons_sponsored": ["ETHIndia", "Devfolio Season 10"],
-    "apply_url": "https://hasura.io/careers"
+    "apply_url": "https://promptql.io/careers"
   }
 ]
-

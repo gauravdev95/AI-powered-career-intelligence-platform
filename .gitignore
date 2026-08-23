@@ -35,5 +35,6 @@ Thumbs.db
 .parcel-cache/
 .vite/
 
-# Local HydraDB dev fallback store
-backend/hydra_local_store.json
+# Local in-process Postgres data dir (dev/test only)
+.pglite/
+backend/.pglite/

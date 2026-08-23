@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from '../lib/api.js'
+import axios, { aiRequest } from '../lib/api.js'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
@@ -98,7 +98,7 @@ export default function RoadmapView({ userId }) {
     setLoading(true)
     setError(null)
     try {
-      const { data } = await axios.get(`${API_BASE}/api/roadmap/${userId}`)
+      const { data } = await axios.get(`${API_BASE}/api/roadmap/${userId}`, aiRequest())
       setRoadmap(data)
     } catch (err) {
       setError(err.appMessage ?? 'Failed to load roadmap')
@@ -144,6 +144,16 @@ export default function RoadmapView({ userId }) {
       <div className="roadmap-header">
         <h2 className="roadmap-title">Your 4-Week Roadmap</h2>
         {roadmap.summary && <p className="roadmap-summary">{roadmap.summary}</p>}
+        {/* A rate limit no longer fails the request — it returns the deterministic
+            plan built from the user's own top gap. Say so rather than passing a
+            template off as a personalised one. */}
+        {roadmap.degraded && (
+          <p className="chat-degraded">
+            {roadmap.degraded === 'rate_limited'
+              ? 'AI quota reached, so this is the standard plan built from your top skill gap. Hit Regenerate later for a tailored one.'
+              : 'AI generation was unavailable, so this is the standard plan built from your top skill gap.'}
+          </p>
+        )}
         <button className="btn btn-outline" type="button" onClick={fetchRoadmap} style={{ marginTop: 12 }}>
           Regenerate
         </button>

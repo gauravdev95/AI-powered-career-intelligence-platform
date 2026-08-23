@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import axios from './lib/api.js'
+import { buildGraph } from './lib/graph.js'
 import ChatInterface from './components/ChatInterface.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
 import EmptyGraphState from './components/EmptyGraphState.jsx'
@@ -17,8 +18,11 @@ import { Icon } from './components/icons.jsx'
 const API_BASE = import.meta.env.VITE_API_URL || ''
 const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
 
+/** Deepest focus trail we keep. Older hops fall off the front of the breadcrumb. */
+const MAX_FOCUS_DEPTH = 6
+
 const LOADING_STEPS = [
-  'HydraDB is preparing your profile...',
+  'Loading your career memory...',
   'Matching your stack to startups...',
   'Connecting hackathons to your skills...',
   'Generating skill gap nodes...',
@@ -29,190 +33,15 @@ function classifyError(err) {
   const status = err.response.status
   const msg = (err.response.data?.error ?? '').toLowerCase()
   if (status === 408 || err.code === 'ECONNABORTED' || msg.includes('timeout')) return 'timeout'
-  if (msg.includes('hydra') || msg.includes('memory') || status === 503) return 'hydradb'
+  if (status === 503 || msg.includes('database') || msg.includes('memory')) return 'storage'
   return 'generic'
 }
 
 const ERROR_MESSAGES = {
   network: 'Could not connect to the backend.',
   timeout: 'AI took too long. Showing the graph with available data.',
-  hydradb: 'Memory is temporarily unavailable. Running in local mode.',
+  storage: 'Your career memory is temporarily unreachable. Nothing was lost - please retry.',
   generic: 'Something went wrong. Please try again.',
-}
-
-function norm(value) {
-  return String(value ?? '').toLowerCase().trim()
-}
-
-function isSameSkill(a, b) {
-  const left = norm(a)
-  const right = norm(b)
-  return left === right || left.includes(right) || right.includes(left)
-}
-
-function cleanId(value) {
-  return String(value).replace(/[^a-zA-Z0-9_-]/g, '-')
-}
-
-function buildGraph({ userStack, startups, hackathons, gapReport, learnedSkills }) {
-  const knownSkills = Array.from(new Set([...(userStack.length ? userStack : ['React', 'Node.js', 'Python']), ...learnedSkills]))
-  const knownSet = knownSkills.map(norm)
-  const rawGaps = gapReport?.priority_skills?.length
-    ? gapReport.priority_skills
-    : inferGaps(startups, knownSkills)
-  const gapSkills = rawGaps.filter(item => !knownSet.some(skill => isSameSkill(skill, item.skill)))
-
-  const nodes = []
-  const edges = []
-  const nodeDetails = []
-  const nodeMap = new Map()
-
-  function addNode(node, detail) {
-    nodes.push(node)
-    nodeDetails.push(detail)
-    nodeMap.set(node.id, detail)
-  }
-
-  addNode({
-    id: 'user',
-    label: 'You',
-    group: 'user',
-    title: 'Your DevRadar career profile',
-  }, {
-    id: 'user',
-    type: 'user',
-    label: 'Your Profile',
-    icon: 'user',
-    mobileView: 'dashboard',
-    raw: { stack: knownSkills },
-  })
-
-  knownSkills.forEach(skill => {
-    const id = `skill-known:${skill}`
-    addNode({
-      id,
-      label: skill,
-      group: 'skill_known',
-      title: `${skill}<br>Known skill in your stack`,
-    }, {
-      id,
-      type: 'skill_known',
-      label: skill,
-      icon: 'skill',
-      mobileView: 'gaps',
-      raw: { skill },
-    })
-    edges.push({ from: 'user', to: id, color: { color: '#d4f53c', opacity: 0.45 }, width: 1.5 })
-  })
-
-  gapSkills.forEach(item => {
-    const id = `skill-gap:${item.skill}`
-    addNode({
-      id,
-      label: item.skill,
-      group: 'skill_gap',
-      title: `${item.skill}<br>Skill gap to close`,
-    }, {
-      id,
-      type: 'skill_gap',
-      label: item.skill,
-      icon: 'gap',
-      mobileView: 'gaps',
-      raw: item,
-    })
-    edges.push({ from: 'user', to: id, dashes: true, color: { color: '#e08080', opacity: 0.4 }, width: 1.2 })
-  })
-
-  startups.forEach(startup => {
-    const score = startup.claude_analysis?.match_percentage ?? startup.match_score ?? 0
-    const id = `startup:${startup.id}`
-    addNode({
-      id,
-      label: startup.name,
-      group: 'startup',
-      title: `${startup.name}<br>${score}% match · ${startup.type}`,
-    }, {
-      id,
-      type: 'startup',
-      label: startup.name,
-      icon: 'startup',
-      score,
-      mobileView: 'startups',
-      raw: startup,
-    })
-
-    knownSkills.forEach(skill => {
-      if (startup.skills_required?.some(required => isSameSkill(required, skill))) {
-        edges.push({ from: `skill-known:${skill}`, to: id, color: { color: '#d4f53c', opacity: 0.35 } })
-      }
-    })
-    gapSkills.forEach(gap => {
-      if (startup.skills_required?.some(required => isSameSkill(required, gap.skill))) {
-        edges.push({ from: `skill-gap:${gap.skill}`, to: id, dashes: true, color: { color: '#e08080', opacity: 0.30 } })
-      }
-    })
-  })
-
-  hackathons.forEach(hackathon => {
-    const id = `hackathon:${hackathon.id}`
-    addNode({
-      id,
-      label: hackathon.name,
-      group: 'hackathon',
-      title: `${hackathon.name}<br>${hackathon.match_score ?? 0}% match · ${hackathon.platform}`,
-    }, {
-      id,
-      type: 'hackathon',
-      label: hackathon.name,
-      icon: 'hackathon',
-      score: hackathon.match_score ?? 0,
-      mobileView: 'hackathons',
-      raw: {
-        ...hackathon,
-        matchedSkills: (hackathon.skills_relevant ?? []).filter(skill => knownSkills.some(known => isSameSkill(known, skill))),
-      },
-    })
-
-    ;(hackathon.skills_relevant ?? []).forEach(skill => {
-      const known = knownSkills.find(item => isSameSkill(item, skill))
-      if (known) edges.push({ from: `skill-known:${known}`, to: id, color: { color: '#c4a0f4', opacity: 0.40 } })
-      const gap = gapSkills.find(item => isSameSkill(item.skill, skill))
-      if (gap) edges.push({ from: `skill-gap:${gap.skill}`, to: id, color: { color: '#e08080', opacity: 0.30 }, dashes: true })
-    })
-  })
-
-  return { nodes, edges: dedupeEdges(edges), nodeDetails, nodeMap, gapSkills, knownSkills }
-}
-
-function dedupeEdges(edges) {
-  const seen = new Set()
-  return edges.filter(edge => {
-    const key = `${edge.from}->${edge.to}`
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  }).map((edge, index) => ({ id: `edge:${index}:${cleanId(edge.from)}:${cleanId(edge.to)}`, ...edge }))
-}
-
-function inferGaps(startups, stack) {
-  const counts = new Map()
-  startups.slice(0, 8).forEach(startup => {
-    ;(startup.skills_required ?? []).forEach(skill => {
-      if (stack.some(known => isSameSkill(known, skill))) return
-      counts.set(skill, (counts.get(skill) ?? 0) + 1)
-    })
-  })
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([skill, count]) => ({
-      skill,
-      why: `Required by ${count} matching companies`,
-      time_weeks: count > 2 ? 2 : 1,
-      difficulty: 'Beginner friendly',
-      resource: `https://www.google.com/search?q=learn+${encodeURIComponent(skill)}`,
-      salary_impact: '+10-15%',
-    }))
 }
 
 function LoadingScreen({ step }) {
@@ -220,7 +49,7 @@ function LoadingScreen({ step }) {
     <main className="loading-screen">
       <section className="loading-card">
         <div className="spinner" />
-        <h1 className="stack-logo" style={{ marginBottom: 8 }}>Generating your graph</h1>
+        <h1 className="stack-logo loading-title">Growing your graph</h1>
         <p className="caption">{LOADING_STEPS[step] ?? LOADING_STEPS[0]}</p>
       </section>
     </main>
@@ -268,7 +97,13 @@ export default function App() {
   const [learnedSkills, setLearnedSkills] = useState([])
   const [rightPanel, setRightPanel] = useState(null) // 'ingest' | 'chat' | 'roadmap' | null
   const [wikiPageCount, setWikiPageCount] = useState(0)
+  // The focus trail. Its last entry is the node the canvas is centred on; the
+  // whole array is the breadcrumb. It is the single source of truth for "where
+  // am I", which is what keeps the canvas, breadcrumb and sidebar in step.
+  const [focusPath, setFocusPath] = useState(['user'])
   const dashboardRevealedRef = useRef(false)
+
+  const focusId = focusPath[focusPath.length - 1]
 
   // Render cold-start: poll backend health until it responds
   useEffect(() => {
@@ -307,7 +142,7 @@ export default function App() {
   const handleGoHome = useCallback(() => setAppState('landing'), [])
 
   // Called by OnboardingWizard after user/init succeeds
-  const handleOnboardComplete = useCallback(async ({ userId: newUserId, stack, learning_stack, experience, goals }) => {
+  const handleOnboardComplete = useCallback(async ({ userId: newUserId, stack, experience }) => {
     setUserId(newUserId)
     setUserStack(stack)
     setAppState('app')
@@ -335,6 +170,7 @@ export default function App() {
     setLoadingStep(0)
     setError(null)
     setSelectedNode(null)
+    setFocusPath(['user'])
     setMemoryVisible(true)
 
     try {
@@ -361,21 +197,6 @@ export default function App() {
     }
   }
 
-  // Legacy submit handler (unused — kept as fallback)
-  const handleSubmit = useCallback(async (stack, experience, goals = []) => {
-    try {
-      const { data: initData } = await axios.post(`${API_BASE}/api/user/init`, { stack, experience, goals })
-      const newUserId = initData.userId
-      setUserId(newUserId)
-      setUserStack(stack)
-      localStorage.setItem('devradar_userId', newUserId)
-      setAppState('app')
-      await loadGraphData(newUserId, stack, experience)
-    } catch (err) {
-      setError(ERROR_MESSAGES[classifyError(err)])
-    }
-  }, [])
-
   const graph = useMemo(() => buildGraph({
     userStack,
     startups,
@@ -384,28 +205,47 @@ export default function App() {
     learnedSkills,
   }), [userStack, startups, hackathons, gapReport, learnedSkills])
 
-  const selectNode = useCallback(node => {
-    setSelectedNode(node)
-    if (node?.mobileView) setActiveMobileView(node.mobileView)
-  }, [])
+  // A node can vanish under us — marking a gap as learned replaces `skill-gap:X`
+  // with `skill-known:X`. Fall back to the profile rather than a blank canvas.
+  useEffect(() => {
+    setFocusPath(prev => {
+      const alive = prev.filter(id => graph.nodeMap.has(id))
+      if (alive.length === prev.length) return prev // no change → no re-render
+      return alive.length ? alive : ['user']
+    })
+  }, [graph])
 
-  const focusNode = useCallback(id => {
-    const node = graph.nodeMap.get(id)
-    if (node) selectNode(node)
-  }, [graph.nodeMap, selectNode])
+  /**
+   * Focus a node: centre it on the canvas, open its detail, and extend or rewind
+   * the breadcrumb. Re-focusing a node already in the trail rewinds to it rather
+   * than appending a duplicate, so the path never loops back on itself.
+   */
+  const focusNode = useCallback((id, { openPanel = true } = {}) => {
+    const detail = graph.nodeMap.get(id)
+    if (!detail) return
+
+    setFocusPath(prev => {
+      const at = prev.indexOf(id)
+      const next = at === -1 ? [...prev, id] : prev.slice(0, at + 1)
+      return next.slice(-MAX_FOCUS_DEPTH)
+    })
+    setSelectedNode(openPanel ? detail : null)
+    setRightPanel(null)
+    if (detail.mobileView) setActiveMobileView(detail.mobileView)
+  }, [graph.nodeMap])
 
   function handleMobileTab(id) {
     setActiveMobileView(id)
-    if (id === 'dashboard' || id === 'journey') {
+    if (id === 'dashboard') {
       setGraphFilter('all')
-      selectNode(graph.nodeMap.get('user'))
+      focusNode('user')
     } else if (id === 'startups') {
       setGraphFilter('startups')
-      const first = startups[0]
+      const first = graph.startups[0]
       if (first) focusNode(`startup:${first.id}`)
     } else if (id === 'hackathons') {
       setGraphFilter('hackathons')
-      const first = hackathons[0]
+      const first = graph.hackathons[0]
       if (first) focusNode(`hackathon:${first.id}`)
     } else if (id === 'gaps') {
       setGraphFilter('skills')
@@ -440,42 +280,45 @@ export default function App() {
     return <LoadingScreen step={loadingStep} />
   }
 
-  const wakingBanner = waking && (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-      display: 'flex', alignItems: 'center', gap: 10,
-      padding: '10px 20px',
-      background: 'var(--warning-bg)',
-      borderBottom: '1px solid var(--warning-border)',
-    }}>
-      <span style={{ fontSize: 13 }}>⏳</span>
-      <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)' }}>
-        backend warming up — <span style={{ color: 'var(--text)', fontWeight: 700 }}>give it ~30 seconds</span> on first load (Render free tier)
-      </p>
+  // Both banners share one fixed stack so a cold start and an error cannot land
+  // on top of each other.
+  const banners = (waking || error) && (
+    <div className="app-banners">
+      {waking && (
+        <div className="waking-banner" role="status">
+          <span className="waking-mark" aria-hidden="true">⏳</span>
+          <p className="waking-copy">
+            backend warming up — <strong>give it ~30 seconds</strong> on first load (Render free tier)
+          </p>
+        </div>
+      )}
+      {error && <p className="app-error" role="alert">{error}</p>}
     </div>
   )
 
   const hasRightPanel = selectedNode || rightPanel
   const graphIsEmpty = graph.nodes.length <= 1
 
+  const sidebarProps = {
+    graph,
+    focusId,
+    onFocusNode: focusNode,
+    userStack: graph.knownSkills,
+    startups: graph.startups,
+    hackathons: graph.hackathons,
+    gapSkills: graph.gapSkills,
+    rightPanel,
+    wikiPageCount,
+    onGoHome: handleGoHome,
+  }
+
   return (
     <div className="app-shell">
-      {wakingBanner}
+      {banners}
       <div className={`graph-layout ${hasRightPanel ? 'panel-open' : ''}`}>
         <Sidebar
-          graph={graph}
-          selectedNode={selectedNode}
-          onSelectNode={selectNode}
-          userStack={graph.knownSkills}
-          startups={startups}
-          hackathons={hackathons}
-          gapSkills={graph.gapSkills}
-          activeMobileView={activeMobileView}
-          setActiveMobileView={setActiveMobileView}
-          rightPanel={rightPanel}
+          {...sidebarProps}
           onSetRightPanel={panel => { setRightPanel(panel); setSelectedNode(null) }}
-          wikiPageCount={wikiPageCount}
-          onGoHome={handleGoHome}
         />
 
         {graphIsEmpty ? (
@@ -488,8 +331,9 @@ export default function App() {
           <Suspense fallback={<LoadingScreen step={0} />}>
             <CareerGraph
               graph={graph}
-              selectedNode={selectedNode}
-              onSelectNode={node => { selectNode(node); setRightPanel(null) }}
+              focusPath={focusPath}
+              onFocusNode={focusNode}
+              onClearSelection={() => setSelectedNode(null)}
               filter={graphFilter}
               setFilter={setGraphFilter}
               onOpenSidebar={() => setSidebarOpen(true)}
@@ -504,8 +348,8 @@ export default function App() {
           <DetailPanel
             node={selectedNode}
             onClose={() => setSelectedNode(null)}
-            startups={startups}
-            hackathons={hackathons}
+            startups={graph.startups}
+            hackathons={graph.hackathons}
             userStack={graph.knownSkills}
             userId={userId}
             gapSkills={graph.gapSkills}
@@ -598,22 +442,9 @@ export default function App() {
           <button className="overlay-scrim" type="button" onClick={() => setSidebarOpen(false)} aria-label="Close sidebar" />
           <div className="sidebar-overlay">
             <Sidebar
-              graph={graph}
-              selectedNode={selectedNode}
-              onSelectNode={node => {
-                selectNode(node)
-                setSidebarOpen(false)
-              }}
-              userStack={graph.knownSkills}
-              startups={startups}
-              hackathons={hackathons}
-              gapSkills={graph.gapSkills}
-              activeMobileView={activeMobileView}
-              setActiveMobileView={setActiveMobileView}
-              rightPanel={rightPanel}
+              {...sidebarProps}
+              onFocusNode={id => { focusNode(id); setSidebarOpen(false) }}
               onSetRightPanel={panel => { setRightPanel(panel); setSelectedNode(null); setSidebarOpen(false) }}
-              wikiPageCount={wikiPageCount}
-              onGoHome={handleGoHome}
             />
           </div>
         </>

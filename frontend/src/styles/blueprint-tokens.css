@@ -1,0 +1,309 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GRAFTED — BLUEPRINT LEDGER
+   Tactile-brutalist engineering drawing. Warm drafting paper · hard ink borders ·
+   offset block shadows · signal orange on blueprint blue · mechanical motion.
+
+   Display: Instrument Serif · Body: Inter Tight · Data: IBM Plex Mono
+
+   Every value below is a token. No component may hardcode a colour, radius or
+   shadow — the theme switcher and any future palette depend on that rule.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Type ─────────────────────────────────────────────────────────────── */
+  --font-display: 'Instrument Serif', 'Times New Roman', Georgia, serif;
+  --font-body:    'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── Paper (base + 3-step elevation by TONE, never by shadow) ─────────── */
+  --bg-base:     #F6F3EC;   /* warm drafting paper */
+  --bg-mantle:   #EFEAE1;
+  --bg-crust:    #E4DED2;
+  --bg-surface0: #FFFFFF;   /* raised — lightest is highest */
+  --bg-surface1: #EFEAE1;
+  --bg-surface2: #E4DED2;
+
+  /* Legacy alias: glass surfaces are now plain opaque paper. Kept so no
+     component silently loses its background during the migration. */
+  --glass:        var(--bg-surface0);
+  --glass-strong: var(--bg-mantle);
+  --glass-hi:     rgba(20, 22, 26, 0.03);
+  --glass-border: var(--ink);
+  --glass-blur:   0px;
+
+  /* ── Ink (4-step text hierarchy) ──────────────────────────────────────── */
+  --ink:        #14161A;
+  --ink-2:      #3D434D;
+  --ink-3:      #6B7280;
+  --ink-4:      #9CA3AF;
+
+  --text:       var(--ink);
+  --text-sub:   var(--ink-2);
+  --text-muted: var(--ink-3);
+  --text-faint: var(--ink-4);
+
+  /* ── Rules ────────────────────────────────────────────────────────────── */
+  --border:        var(--ink);
+  --border-hair:   rgba(20, 22, 26, 0.20);   /* internal dividers */
+  --border-active: var(--accent);
+  --rule-width:    1px;
+
+  /* ── Signal orange — primary. Budgeted to ~4% of pixels. ──────────────── */
+  --accent:        #E0452A;
+  --accent-alt:    #B93619;
+  --accent-bg:     rgba(224, 69, 42, 0.10);
+  --accent-border: var(--accent);
+  --accent-ink:    #FFFFFF;   /* text on an orange fill */
+
+  /* ── Blueprint blue — secondary ───────────────────────────────────────── */
+  --blue:        #2B5CE6;
+  --blue-bg:     rgba(43, 92, 230, 0.10);
+  --blue-border: var(--blue);
+
+  /* ── Support ──────────────────────────────────────────────────────────── */
+  --ochre:      #C08A2E;
+  --ochre-bg:   rgba(192, 138, 46, 0.14);
+  --moss:       #2D7A5F;
+  --moss-bg:    rgba(45, 122, 95, 0.10);
+
+  /* Legacy hue aliases, remapped onto the new palette. */
+  --cyan:          var(--blue);
+  --cyan-bg:       var(--blue-bg);
+  --cyan-border:   var(--blue);
+  --violet:        var(--moss);
+  --violet-bg:     var(--moss-bg);
+
+  /* ── Semantic ─────────────────────────────────────────────────────────── */
+  --success:        var(--moss);
+  --success-bg:     var(--moss-bg);
+  --success-border: var(--moss);
+
+  --warning:        var(--ochre);
+  --warning-bg:     var(--ochre-bg);
+  --warning-border: var(--ochre);
+
+  --danger:         var(--accent);
+  --danger-bg:      var(--accent-bg);
+  --danger-border:  var(--accent);
+
+  --info:           var(--blue);
+  --info-bg:        var(--blue-bg);
+  --info-border:    var(--blue);
+
+  /* ── Graph palette — semantic, remapped ───────────────────────────────── */
+  --node-user:      var(--ink);      /* + orange ring, applied in CareerGraph */
+  --node-skill:     var(--blue);     /* skills you have */
+  --node-gap:       var(--accent);   /* skill gaps */
+  --node-company:   var(--ochre);
+  --node-hackathon: var(--moss);
+  --node-edge:      rgba(20, 22, 26, 0.28);
+
+  /* ── Depth: hard offset blocks. No blur, ever. ────────────────────────── */
+  --shadow-block:   3px 3px 0 var(--ink);
+  --shadow-block-sm: 2px 2px 0 var(--ink);
+  --shadow-press:   1px 1px 0 var(--ink);
+  --shadow-card:    var(--shadow-block);
+  --shadow-panel:   var(--shadow-block);
+  --shadow-modal:   6px 6px 0 var(--ink);
+  --shadow-input:   var(--shadow-press);
+
+  /* Glow tokens are retained as no-ops so any missed reference renders flat
+     rather than falling back to an inherited neon value. */
+  --glow-accent: none;
+  --glow-cyan:   none;
+
+  /* ── Gradients: flat fills only. ──────────────────────────────────────── */
+  --grad-accent:  var(--accent);
+  --grad-neon:    var(--ink);
+  --grad-surface: var(--bg-surface0);
+
+  /* ── Paper texture ────────────────────────────────────────────────────── */
+  --grid-size:    8px;
+  --grid-ink:     rgba(20, 22, 26, 0.045);   /* 4% graph paper */
+  --grain-ink:    0.03;                      /* 3% SVG noise */
+
+  /* ── Geometry: zero radius is the whole point. ────────────────────────── */
+  --radius:      0;
+  --radius-card: 0;
+  --radius-pill: 0;
+
+  /* ── Motion: crisp, stepped, mechanical. 180–240ms. ───────────────────── */
+  --ease-mech:   cubic-bezier(.2, 0, 0, 1);
+  --dur-fast:    120ms;
+  --dur-base:    180ms;
+  --dur-slow:    240ms;
+
+  /* ── Chat bubbles ─────────────────────────────────────────────────────── */
+  --bubble-user-bg:    var(--accent);
+  --bubble-user-text:  var(--accent-ink);
+  --bubble-bot-bg:     var(--bg-surface0);
+  --bubble-bot-text:   var(--ink);
+  --bubble-bot-border: var(--ink);
+
+  /* ── Decorative marks (legacy aliases, kept so nothing renders unstyled) ── */
+  --circle-1: var(--accent);
+  --circle-2: var(--blue);
+  --circle-3: var(--ochre);
+  --circle-4: var(--moss);
+
+  /* ── Legacy semantic aliases ──────────────────────────────────────────── */
+  --primary:   var(--accent);
+  --secondary: var(--ink-2);
+  --muted:     var(--ink-3);
+
+  /* ── Layout (unchanged — structure is preserved) ──────────────────────── */
+  --topbar-height: 48px;
+  --crumb-height:  34px;   /* focus breadcrumb, between topbar and canvas */
+  --sidebar-width: 244px;
+  --panel-width:   328px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PAPER TEXTURE
+   8px graph-paper grid + SVG noise grain, fixed behind all content.
+   Replaces the aurora blobs. Purely decorative, never hit-tests.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.paper-ground::before,
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--grid-ink) var(--rule-width), transparent var(--rule-width)),
+    linear-gradient(to bottom, var(--grid-ink) var(--rule-width), transparent var(--rule-width));
+  background-size: var(--grid-size) var(--grid-size);
+}
+
+/* Paper grain. Encoded inline so it costs no request and cannot 404. */
+.paper-ground::after,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--grain-ink);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MECHANICAL MOTION
+   Every keyframe is stepped, wiped, or drawn. Nothing fades up, drifts,
+   shimmers, or glows.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Blinking instrument indicator — hard on/off, no easing. */
+@keyframes blink-mark {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}
+
+/* Retained name (`pulse-dot`) so existing markup keeps working, but the
+   behaviour is now a mechanical blink rather than an expanding glow ring. */
+@keyframes pulse-dot {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0.2; }
+}
+
+/* Stepped rotation — a mechanical index, not a smooth spin. */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Panels arrive by sliding on a rail. No opacity ramp. */
+@keyframes slide-panel {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes bottom-sheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* Clip-path wipe — the house reveal. Elements never translate or fade. */
+@keyframes wipe-in {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes wipe-in-up {
+  from { clip-path: inset(100% 0 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+/* Retained name, rebuilt as a wipe so legacy `.animate-fade-up` markup
+   inherits the new language instead of the old one. */
+@keyframes fade-up {
+  from { clip-path: inset(0 0 100% 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+/* SVG stroke draw-on for the graft mark. */
+@keyframes draw-stroke {
+  from { stroke-dashoffset: var(--draw-length, 1000); }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Kinetic typography: characters snap in on a step, no blur or fade. */
+@keyframes char-in {
+  from { clip-path: inset(0 0 100% 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+/* Mono ticker band. */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Chat typing indicator — stepped, three discrete positions. */
+@keyframes typing-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.25; }
+  50%      { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Loading bar sweeps as a solid block across a track. */
+@keyframes scan-sweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(400%); }
+}
+
+/* Crosshair readout tick. */
+@keyframes tick-flash {
+  0%, 100% { background: var(--accent); }
+  50%      { background: var(--ink); }
+}
+
+.animate-fade-up   { animation: wipe-in-up var(--dur-slow) var(--ease-mech) both; }
+.animate-wipe      { animation: wipe-in var(--dur-slow) var(--ease-mech) both; }
+.animate-pulse-dot { animation: pulse-dot 1.2s steps(1, end) infinite; }
+.animate-rise-in   { animation: wipe-in-up var(--dur-slow) var(--ease-mech) both; }
+.animate-scale-in  { animation: wipe-in var(--dur-base) var(--ease-mech) both; }
+.animate-glow      { animation: blink-mark 1.6s steps(1, end) infinite; }
+
+/* Stagger helper — set --stagger-i on the element. Tightened to match the
+   faster mechanical timing. */
+[style*="--stagger-i"] { animation-delay: calc(var(--stagger-i, 0) * 40ms); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   UNIVERSAL SURFACE RULES
+   Applied after the component styles so the aesthetic holds everywhere without
+   editing 246 individual rules.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Focus is always a hard outline, never a glow. */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

@@ -97,7 +97,7 @@ export default function StackInput({ onSubmit, error }) {
     <main className="stack-screen">
       <form className="stack-card" onSubmit={submit}>
         <div className="stack-logo-row">
-          <div className="stack-logo">DevRadar</div>
+          <div className="stack-logo">Grafted</div>
           <span className="event-badge" style={{ marginTop: 0 }}>WikiThon 2026</span>
         </div>
         <div className="sidebar-divider" style={{ margin: '18px 0 0' }} />
@@ -195,7 +195,7 @@ export default function StackInput({ onSubmit, error }) {
         </button>
 
         <p className="caption" style={{ textAlign: 'center', marginTop: 14, color: 'var(--muted)' }}>
-          Powered by HydraDB Memory + Claude AI
+          Powered by PostgreSQL + pgvector + Gemini
         </p>
       </form>
     </main>

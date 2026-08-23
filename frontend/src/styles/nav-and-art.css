@@ -1,0 +1,423 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NAVBAR + STEP ARTWORK
+   Loaded after landing.css so these rules win where they overlap.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAVBAR
+   Transparent over the illustrated hero, solid once the hero is behind you.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lp .nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(12px, 3vw, 40px);
+  padding: clamp(12px, 1.6vw, 18px) clamp(16px, 4vw, 52px);
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition:
+    background 320ms var(--ease-out),
+    border-color 320ms var(--ease-out),
+    box-shadow 320ms var(--ease-out),
+    padding 320ms var(--ease-out);
+}
+
+.lp .nav--solid {
+  background: rgba(246, 243, 236, 0.86);
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  border-bottom-color: rgba(20, 22, 26, 0.08);
+  box-shadow: 0 1px 20px rgba(20, 22, 26, 0.05);
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* ── Brand ───────────────────────────────────────────────────────────────── */
+
+.lp .nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.lp .nav-logo { width: 30px; height: 30px; display: block; }
+.lp .nav-logo svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* Graft glyph. The rotating radar sweep it replaces was the old identity's most
+   literal statement — a mark that circles forever and keeps nothing. This one is
+   static on purpose: a join, and the tie that holds it. */
+.lp .nl-stock {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.lp .nl-scion {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  opacity: 0.72;
+}
+.lp .nl-scion--b { opacity: 0.5; }
+
+.lp .nl-tie {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.lp .nl-bud { fill: #fff; }
+.lp .nl-bud--alt { fill: var(--accent); }
+
+.lp .nav--solid .nl-stock,
+.lp .nav--solid .nl-scion { stroke: var(--ink); }
+.lp .nav--solid .nl-bud { fill: var(--ink); }
+.lp .nav--solid .nl-bud--alt { fill: var(--accent); }
+
+.lp .nav-word {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 1.7vw, 23px);
+  letter-spacing: -0.025em;
+  color: #fff;
+  transition: color 320ms var(--ease-out);
+}
+.lp .nav--solid .nav-word { color: var(--ink); }
+
+/* ── Links ───────────────────────────────────────────────────────────────── */
+
+.lp .nav-links {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.6vw, 28px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.lp .nav-link {
+  position: relative;
+  padding: 6px 2px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.82);
+  transition: color 240ms var(--ease-out);
+}
+.lp .nav-link:hover { color: #fff; }
+.lp .nav--solid .nav-link { color: var(--ink-3); }
+.lp .nav--solid .nav-link:hover { color: var(--ink); }
+
+/* Underline grows from the centre on hover and locks in when the section is active. */
+.lp .nav-link::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  transition: width 260ms var(--ease-out);
+}
+.lp .nav-link:hover::after { width: 60%; }
+.lp .nav-link.is-active::after { width: 100%; }
+.lp .nav-link.is-active { color: #fff; font-weight: 600; }
+.lp .nav--solid .nav-link.is-active { color: var(--ink); }
+
+/* ── Actions ─────────────────────────────────────────────────────────────── */
+
+.lp .nav-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.lp .nav-secondary {
+  padding: 9px 16px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 240ms var(--ease-out), color 240ms var(--ease-out);
+}
+.lp .nav-secondary:hover { background: rgba(255, 255, 255, 0.28); }
+.lp .nav--solid .nav-secondary { background: rgba(20, 22, 26, 0.06); color: var(--ink); }
+.lp .nav--solid .nav-secondary:hover { background: rgba(20, 22, 26, 0.11); }
+
+/* ── Burger ──────────────────────────────────────────────────────────────── */
+
+.lp .nav-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 0 9px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+}
+.lp .nav--solid .nav-burger { background: rgba(20, 22, 26, 0.06); }
+
+.lp .nav-burger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  border-radius: 2px;
+  background: #fff;
+  transition: transform 260ms var(--ease-out), opacity 200ms var(--ease-out);
+}
+.lp .nav--solid .nav-burger span { background: var(--ink); }
+
+.lp .nav--open .nav-burger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.lp .nav--open .nav-burger span:nth-child(2) { opacity: 0; }
+.lp .nav--open .nav-burger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── Mobile sheet ────────────────────────────────────────────────────────── */
+
+.lp .nav-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 80px 24px 40px;
+  background: var(--cream);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms var(--ease-out);
+}
+.lp .nav-sheet.is-open { opacity: 1; pointer-events: auto; }
+
+.lp .nav-sheet-link {
+  padding: 14px 8px;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 7vw, 40px);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(14px);
+}
+.lp .nav-sheet.is-open .nav-sheet-link {
+  animation: sheet-in 400ms var(--ease-out) forwards;
+  animation-delay: calc(var(--si) * 60ms + 80ms);
+}
+
+@keyframes sheet-in { to { opacity: 1; transform: none; } }
+
+.lp .nav-sheet-cta { margin-top: 22px; }
+
+@media (max-width: 860px) {
+  .lp .nav-links { display: none; }
+  .lp .nav-burger { display: flex; }
+  .lp .nav-secondary { display: none; }
+}
+
+@media (max-width: 460px) {
+  .lp .nav-actions .btn--sm { display: none; }
+}
+
+/* Hero content clears the fixed bar. */
+.lp .hero-content { padding-top: clamp(76px, 12vh, 130px); }
+
+/* Anchored sections stop below the bar rather than under it. */
+.lp [id] { scroll-margin-top: 78px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STEP ARTWORK — one distinct artefact per step
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lp .art-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  background: rgba(20, 22, 26, 0.05);
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-weight: 600;
+  transition: background 200ms, color 200ms;
+}
+.lp .art-tag--on { background: var(--accent-bg); color: var(--accent-alt); }
+.lp .art-tick { font-size: 10px; }
+
+.lp .art-meter {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: rgba(20, 22, 26, 0.08);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.lp .art-meter-fill {
+  display: block;
+  height: 100%;
+  width: var(--w, 0%);
+  border-radius: var(--r-pill);
+  background: var(--accent);
+}
+
+.lp .art-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+}
+
+/* ── Match bars ──────────────────────────────────────────────────────────── */
+
+.lp .art-bar-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 34px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.lp .art-bar-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+
+.lp .art-bar-track {
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: rgba(20, 22, 26, 0.07);
+  overflow: hidden;
+}
+
+.lp .art-bar-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  animation: bar-grow 900ms var(--ease-out) forwards;
+  animation-delay: calc(var(--bi) * 120ms + 200ms);
+}
+@keyframes bar-grow { to { width: var(--pct); } }
+
+.lp .art-bar-pct {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  text-align: right;
+}
+
+/* ── Ingest rows ─────────────────────────────────────────────────────────── */
+
+.lp .art-url {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp .art-url-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--moss);
+  flex-shrink: 0;
+}
+
+.lp .art-row {
+  opacity: 0;
+  animation: row-in 420ms var(--ease-out) forwards;
+  animation-delay: calc(var(--ri) * 110ms + 250ms);
+}
+@keyframes row-in { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+
+.lp .art-row-dot--company { background: var(--ochre); }
+.lp .art-row-dot--gap { background: var(--accent); }
+
+.lp .art-row-name { font-weight: 600; color: var(--ink); }
+
+.lp .art-row-kind {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+/* ── Memory timeline ─────────────────────────────────────────────────────── */
+
+.lp .art-timeline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 16px;
+  padding-top: 4px;
+}
+
+/* The connecting rail. */
+.lp .art-timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 8px;
+  height: 2px;
+  background: rgba(20, 22, 26, 0.10);
+}
+
+.lp .art-tl {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+}
+
+.lp .art-tl-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(20, 22, 26, 0.18);
+  border: 2px solid var(--cream-2);
+  box-shadow: 0 0 0 1px rgba(20, 22, 26, 0.10);
+}
+
+.lp .art-tl.is-now .art-tl-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px var(--accent-bg);
+}
+
+.lp .art-tl-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+}
+.lp .art-tl.is-now .art-tl-label { color: var(--accent-alt); font-weight: 600; }
+
+/* ── Per-artefact tuning ─────────────────────────────────────────────────────
+   These modifiers were carrying no rules. Each now sets the one thing that
+   actually differs between the four artefacts, so no class on the page is dead. */
+
+.lp .art--form { display: flex; flex-direction: column; gap: 10px; }
+.lp .art--match { display: flex; flex-direction: column; }
+.lp .art--match .art-label { margin-bottom: 12px; }
+.lp .art--ingest { display: flex; flex-direction: column; gap: 10px; }
+.lp .art--memory { display: flex; flex-direction: column; }
+
+/* Near clouds sit larger and fully opaque; far ones are already dialled back. */
+.lp .hero-clouds--near .cloud { opacity: 0.96; }

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import axios from '../lib/api.js'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3003'
 
 // ── Skill categories ──────────────────────────────────────────────────────────
 const SKILL_CATEGORIES = [
@@ -162,7 +162,7 @@ export default function OpeningScreen({ onComplete }) {
               <span key={i} className="opening-dot" style={{ background: c }} />
             ))}
           </div>
-          <span className="opening-wordmark">DevRadar</span>
+          <span className="opening-wordmark">Grafted</span>
           <span className="opening-hackathon-badge">WikiThon 2026</span>
         </div>
 
@@ -172,8 +172,8 @@ export default function OpeningScreen({ onComplete }) {
 
         <h2 className="opening-heading">Build your career graph</h2>
         <p className="opening-body">
-          Select your skills below, tell us your goals, and DevRadar will build a personal
-          knowledge graph powered by HydraDB memory.
+          Select your skills below, tell us your goals, and Grafted will build a personal
+          knowledge graph powered by career memory.
         </p>
 
         {/* Feature pills */}
@@ -385,7 +385,7 @@ export default function OpeningScreen({ onComplete }) {
               : `Start → Build Career Graph (${knowWell.length + learning.length} skills)`}
         </button>
 
-        <p className="opening-footer">Powered by HydraDB · {import.meta.env.VITE_AI_PROVIDER ?? 'Claude AI'} · WikiThon 2026</p>
+        <p className="opening-footer">Powered by {import.meta.env.VITE_AI_PROVIDER ?? 'Gemini'} · WikiThon 2026</p>
       </div>
     </div>
   )

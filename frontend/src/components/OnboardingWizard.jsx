@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import axios from '../lib/api.js'
 import DevRadarLogo from './DevRadarLogo.jsx'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3003'
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ function Step1({ name, setName, experience, setExperience }) {
         Let's start with you
       </h2>
       <p style={{ fontSize: 14, color: 'var(--text-sub)', margin: '0 0 24px', lineHeight: 1.5 }}>
-        This helps DevRadar personalize everything for your situation.
+        This helps Grafted personalize everything for your situation.
       </p>
 
       {/* Name */}
@@ -325,7 +325,7 @@ function Step3({ goals, toggleGoal, targetRole, setTargetRole, targetCompanies, 
           onBlur={e => { e.target.style.borderColor = 'var(--border)' }}
         />
         <p style={{ fontSize: 11, color: 'var(--text-faint)', margin: '5px 0 0' }}>
-          Leave blank if unsure — DevRadar will suggest based on your skills.
+          Leave blank if unsure — Grafted will suggest based on your skills.
         </p>
       </div>
 
@@ -436,7 +436,7 @@ function Step4({ name, experience, knowWell, learning, goals, targetRole, target
       <Divider />
 
       {/* Summary preview */}
-      <SectionTitle>Your DevRadar Profile</SectionTitle>
+      <SectionTitle>Your Grafted Profile</SectionTitle>
       <div style={{
         padding: 16, background: 'var(--bg-surface0)', border: '1px solid var(--border)',
         borderRadius: 12, fontSize: 13, lineHeight: 1.6, marginBottom: 16,
@@ -459,7 +459,7 @@ function Step4({ name, experience, knowWell, learning, goals, targetRole, target
       </div>
 
       <p style={{ fontSize: 11, color: 'var(--text-faint)', lineHeight: 1.6, marginBottom: 16 }}>
-        This is saved privately in HydraDB. Only you can see it. You can update it anytime.
+        This is saved privately in your own database. Only you can see it. You can update it anytime.
       </p>
 
       {/* Submit progress steps */}
@@ -547,7 +547,7 @@ export default function OnboardingWizard({ onComplete, waking = false, onGoHome 
 
     const steps = [
       { label: 'Creating your profile…',     done: false },
-      { label: 'Saving to HydraDB…',         done: false },
+      { label: 'Saving to your career memory…',         done: false },
       { label: 'Building your career wiki…', done: false },
       { label: 'Preparing your graph…',      done: false },
     ]
@@ -631,7 +631,7 @@ export default function OnboardingWizard({ onComplete, waking = false, onGoHome 
               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
             >
               <DevRadarLogo size={24} />
-              <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.4px' }}>devradar</span>
+              <span className="brand-word">grafted</span>
             </button>
             <div style={{ textAlign: 'right' }}>
               <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>Step {step} of {TOTAL_STEPS}</span>

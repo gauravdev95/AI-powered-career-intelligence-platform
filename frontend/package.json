@@ -1,7 +1,7 @@
 {
-  "name": "devradar-frontend",
+  "name": "grafted-frontend",
   "version": "1.0.0",
-  "description": "DevRadar frontend - Your career. One screen. Always remembered.",
+  "description": "Grafted frontend - Your career, remembered.",
   "type": "module",
   "private": true,
   "scripts": {

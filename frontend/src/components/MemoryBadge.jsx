@@ -16,7 +16,7 @@ export default function MemoryBadge({ context, onDismiss }) {
       <div className="memory-copy">
         <div className="memory-label">
           <span className="pulse-dot" style={{ background: 'var(--accent)', width: 6, height: 6 }} />
-          HydraDB · memory active
+          memory engine · active
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 2 }}>
           {context.message}
