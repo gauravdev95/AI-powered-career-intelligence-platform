@@ -1,4 +1,4 @@
-# DevRadar — Project Idea Report
+# Grafted — Project Idea Report
 ### "Meri soch se lekar kaam karne tak" — ek developer ka career intelligence platform
 
 *(Ye report idea se lekar current architecture tak ka safar hai — kya socha, kya use kiya, data kaha se aata hai, aur ye actually kaise kaam karta hai.)*
@@ -20,7 +20,7 @@ Main ek Indian developer hoon (ya student). Mere paas ek problem hai jo baar-baa
 
 > "Kyun na ek aisa platform banau jo mera **career ka Google Maps** ban jaye? Ek live map jisme main center me hoon, aur mere charo taraf meri skills, companies, hackathons, aur skill-gaps nodes ki tarah jude hue hain. Aur sabse important — **ye mujhe har baar yaad rakhe.**"
 
-Isko naam diya: **DevRadar** — *"Your career. One screen. Always remembered."*
+Isko naam diya: **Grafted** — *"Your career. One screen. Always remembered."*
 
 ### Core idea ek line me
 
@@ -186,6 +186,6 @@ Onboarding → memories → Career Graph
 
 ## Summary — Ek line me
 
-> DevRadar ek aisa platform hai jisme **React + vis-network** se graph banta hai, **Node/Express** API hai, **PostgreSQL + pgvector** ka custom Career Memory Engine sab kuch permanently yaad rakhta hai, aur **Gemini** extraction, chat aur roadmap sambhalta hai — sab milke ek personal career-Wikipedia jo har session me smarter hoti jaati hai, aur jiske har jawab ke peeche ek verify ki hui citation hoti hai.
+> Grafted ek aisa platform hai jisme **React + vis-network** se graph banta hai, **Node/Express** API hai, **PostgreSQL + pgvector** ka custom Career Memory Engine sab kuch permanently yaad rakhta hai, aur **Gemini** extraction, chat aur roadmap sambhalta hai — sab milke ek personal career-Wikipedia jo har session me smarter hoti jaati hai, aur jiske har jawab ke peeche ek verify ki hui citation hoti hai.
 
 Technical detail ke liye: **[ARCHITECTURE.md](ARCHITECTURE.md)**

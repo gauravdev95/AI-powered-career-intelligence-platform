@@ -22,11 +22,21 @@ const THEMES = {
 }
 
 const DEFAULT_THEME = "rosepine-dawn"
-const STORAGE_KEY = "devradar_theme"
+const STORAGE_KEY = "grafted_theme"
+const LEGACY_STORAGE_KEY = "devradar_theme"
 
 export function useTheme() {
   const [theme, setThemeState] = useState(
-    () => (typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null) || DEFAULT_THEME
+    () => {
+      if (typeof window === 'undefined') return DEFAULT_THEME
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY)
+      // Migrate old key to new key
+      if (saved && !localStorage.getItem(STORAGE_KEY)) {
+        localStorage.setItem(STORAGE_KEY, saved)
+        localStorage.removeItem(LEGACY_STORAGE_KEY)
+      }
+      return saved || DEFAULT_THEME
+    }
   )
 
   // Apply theme attribute on mount
@@ -37,6 +47,7 @@ export function useTheme() {
   function setTheme(id) {
     if (!THEMES[id]) return
     localStorage.setItem(STORAGE_KEY, id)
+    localStorage.removeItem(LEGACY_STORAGE_KEY)
     document.documentElement.setAttribute('data-theme', id)
     setThemeState(id)
   }

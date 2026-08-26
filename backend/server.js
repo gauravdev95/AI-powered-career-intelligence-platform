@@ -1,11 +1,11 @@
 /**
- * DevRadar API.
+ * Grafted API.
  *
  * A thin HTTP layer over the Career Memory Engine. Route handlers validate input,
  * call one engine method, and shape the response — no persistence, embedding, or
  * model logic lives here.
  *
- * Authorisation model: DevRadar has no login. A userId is a server-minted UUIDv4
+ * Authorisation model: Grafted has no login. A userId is a server-minted UUIDv4
  * (122 bits of entropy) held in the client's localStorage and used as a bearer
  * capability. Every route resolves that id against PostgreSQL and every query is
  * scoped to it, so one user can never read another's memory — but anyone holding

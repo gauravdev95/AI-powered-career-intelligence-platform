@@ -1,4 +1,4 @@
-# DevRadar Architecture
+# Architecture
 
 ```
                          React 18 + vis-network
@@ -16,14 +16,14 @@
                                   ▼
                              Gemini API
                                   ▼
-                   Grounded career intelligence
+                     Grounded career intelligence
 ```
 
 ---
 
 ## 1. Why this shape
 
-DevRadar's product promise is *"your career, always remembered."* That makes storage
+Grafted's product promise is *"your career, always remembered."* That makes storage
 the product, not a detail. The architecture is therefore organised around one
 question: **what does the system durably know about this developer, and how does it
 decide what to say?**
@@ -64,8 +64,7 @@ candidate → embed → deduplicate → resolve conflict → persist → relate
 ```
 
 1. **Embed.** The candidate's title + content is embedded once.
-2. **Deduplicate.** `MemoryDeduplicator.resolve()` compares it against what is stored
-   and returns one of five actions:
+2. **Deduplicate.** `MemoryDeduplicator.resolve()` compares it against what is stored and returns one of five actions:
 
    | Action | When | Effect |
    |---|---|---|
@@ -79,7 +78,7 @@ candidate → embed → deduplicate → resolve conflict → persist → relate
    a low-quality scrape from silently overwriting something the developer typed into
    onboarding.
 
-3. **Persist and relate.** Skills, gaps, goals and targets are wired to the `PROFILE`
+3. **Persist and relate.** Skills, gaps, goals and targets are wired to the `PROFILE`.
    memory, so the graph always has a root.
 
 `rememberMany()` embeds a whole batch in one call and collapses in-batch duplicates
@@ -97,10 +96,12 @@ question → embed → pgvector ANN ─┐
 Retrieval is deliberately hybrid. Embeddings handle paraphrase; a literal keyword
 pass catches rare tokens (`Zerodha`, `DSA`) that fall below the similarity floor.
 
+
 **Ranking** blends six signals, each normalised to `[0,1]`:
 
-| Signal | Default weight | Rationale |
-|---|---|---|
+
+| Signal     | Default weight | Rationale |
+|--------|----------------|-----------|
 | `semantic` | 0.40 | Cosine similarity to the query |
 | `importance` | 0.15 | How central the fact is to their career |
 | `recency` | 0.15 | Exponential decay, 30-day half-life |
@@ -217,7 +218,7 @@ provider primitives. Adding a provider means one new module plus `AI_PROVIDER`.
 Structured tasks use Gemini's JSON mode with an explicit `responseSchema`, which is far
 more reliable than asking for JSON in the prompt.
 
-**Graceful degradation.** With no `GEMINI_API_KEY`, DevRadar still runs: matching,
+**Graceful degradation.** With no `GEMINI_API_KEY`, Grafted still runs: matching,
 storage, retrieval, ranking, the graph and the journey are all unaffected. Embeddings
 fall back to a deterministic local hashing encoder (lexical rather than semantic —
 lower recall on paraphrase, but real vector search), and generative features return
@@ -259,7 +260,7 @@ Applied on the initial request **and re-applied on every redirect hop**:
 
 ### Authorisation model — a known limitation
 
-DevRadar has no login. A `userId` is a server-minted UUIDv4 held in `localStorage` and
+Grafted has no login. A `userId` is a server-minted UUIDv4 held in `localStorage` and
 used as a **bearer capability**. Every route resolves it against PostgreSQL and every
 query is scoped to it, so one user can never read another's memory — but anyone who
 obtains the id has full access to that profile. Real accounts are the documented
@@ -289,7 +290,6 @@ and the schema under test are the production ones, not mocks.
 | API contracts | Response shapes the React frontend depends on |
 
 ---
-
 ## 9. What changed from v1
 
 | v1 | v2 |

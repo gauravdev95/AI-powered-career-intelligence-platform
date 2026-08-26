@@ -15,7 +15,7 @@ PostgreSQL database together, so `DATABASE_URL` is wired automatically.
 2. Render → **New** → **Blueprint** → select the repo.
 3. Set the two secrets Render cannot infer:
    - `GEMINI_API_KEY` — your key (optional; the app runs without it)
-   - `CORS_ORIGIN` — your Vercel URL, e.g. `https://devradar.vercel.app`
+   - `CORS_ORIGIN` — your Vercel URL, e.g. `https://grafted.vercel.app`
 4. Deploy. The schema is applied automatically on first boot
    (`DATABASE_AUTO_MIGRATE=true`), including `CREATE EXTENSION vector`.
 

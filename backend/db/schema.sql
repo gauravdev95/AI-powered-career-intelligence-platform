@@ -1,4 +1,4 @@
--- DevRadar Career Memory Engine — canonical schema.
+-- Grafted Career Memory Engine — canonical schema.
 -- {{EMBEDDING_DIM}} is substituted by db/migrate.js from config.ai.embeddingDimensions.
 -- Every statement is idempotent: migrate.js may run on every boot.
 

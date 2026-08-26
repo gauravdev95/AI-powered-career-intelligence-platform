@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: devradar-backend
+    name: grafted-backend
     env: node
     region: singapore
     plan: free
@@ -15,7 +15,7 @@ services:
 
       # Origins allowed to call the API.
       - key: CORS_ORIGIN
-        sync: false
+        value: https://ai-powered-career-intelligence-platform-y3cn.onrender.com,http://localhost:5173,http://localhost:5174
 
       - key: RATE_LIMIT_WINDOW_MS
         value: 900000
@@ -28,7 +28,7 @@ services:
       # so memory survives every restart, redeploy and free-tier sleep.
       - key: DATABASE_URL
         fromDatabase:
-          name: devradar-postgres
+          name: grafted-postgres
           property: connectionString
       - key: DATABASE_SSL
         value: true
@@ -54,8 +54,8 @@ services:
         value: 768
 
 databases:
-  - name: devradar-postgres
-    databaseName: devradar
+  - name: grafted-postgres
+    databaseName: grafted
     region: singapore
     plan: free
     # Render's PostgreSQL ships pgvector; the schema enables it with

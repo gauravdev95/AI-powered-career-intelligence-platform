@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import axios from './lib/api.js'
+import api from './lib/api.js'
 import { buildGraph } from './lib/graph.js'
 import ChatInterface from './components/ChatInterface.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
@@ -15,7 +15,6 @@ import RoadmapView from './components/RoadmapView.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import { Icon } from './components/icons.jsx'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://ai-powered-career-intelligence-platform-9bdm.onrender.com'
 const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
 
 /** Deepest focus trail we keep. Older hops fall off the front of the breadcrumb. */
@@ -113,18 +112,20 @@ export default function App() {
 
   // On mount: check for existing user → route to correct screen
   useEffect(() => {
-    // Support both old and new localStorage key during migration
-    const savedId = localStorage.getItem('devradar_userId') || localStorage.getItem('devradar_user_id')
+    // Support old and new localStorage keys during migration
+    const savedId = localStorage.getItem('grafted_userId')
+      || localStorage.getItem('devradar_userId')
+      || localStorage.getItem('devradar_user_id')
     if (!savedId) {
       setAppState('landing')
       return
     }
-    // Migrate old key → new key
-    if (!localStorage.getItem('devradar_userId')) {
-      localStorage.setItem('devradar_userId', savedId)
-    }
+    // Migrate old keys → new key and clean up
+    localStorage.setItem('grafted_userId', savedId)
+    localStorage.removeItem('devradar_userId')
+    localStorage.removeItem('devradar_user_id')
     setUserId(savedId)
-    axios.get(`${API_BASE}/api/return-context/${savedId}`)
+    api.get(`/api/return-context/${savedId}`)
       .then(({ data }) => {
         if (data.hasHistory) {
           setReturnContext(data)
@@ -153,7 +154,7 @@ export default function App() {
   const handleReturningContinue = useCallback(async () => {
     setAppState('app')
     try {
-      const { data } = await axios.get(`${API_BASE}/api/user/${userId}`)
+      const { data } = await api.get(`/api/user/${userId}`)
       const stack = data.stack ?? []
       setUserStack(stack)
       if (stack.length > 0) {
@@ -175,18 +176,18 @@ export default function App() {
 
     try {
       setLoadingStep(1)
-      const { data: analyzeData } = await axios.post(`${API_BASE}/api/analyze`, { userId: uid, stack, experience })
+      const { data: analyzeData } = await api.post('/api/analyze', { userId: uid, stack, experience })
       const fetchedStartups = analyzeData.startups ?? []
       setStartups(fetchedStartups)
       dashboardRevealedRef.current = true
 
       setLoadingStep(2)
-      const { data: hackData } = await axios.get(`${API_BASE}/api/hackathons/${uid}?stack=${encodeURIComponent(stack.join(','))}`)
+      const { data: hackData } = await api.get(`/api/hackathons/${uid}?stack=${encodeURIComponent(stack.join(','))}`)
       setHackathons(hackData.ranked_hackathons ?? [])
 
       setLoadingStep(3)
       const topCompanies = fetchedStartups.slice(0, 5).map(s => s.name)
-      const { data: gapData } = await axios.post(`${API_BASE}/api/gaps`, { userId: uid, stack, targetCompanies: topCompanies })
+      const { data: gapData } = await api.post('/api/gaps', { userId: uid, stack, targetCompanies: topCompanies })
       setGapReport(gapData)
     } catch (err) {
       const kind = classifyError(err)
@@ -358,7 +359,7 @@ export default function App() {
               setLearnedSkills(prev => prev.includes(skill) ? prev : [...prev, skill])
               setSelectedNode(null)
             }}
-            onSave={() => window.dispatchEvent(new CustomEvent('devradar:memory-saved'))}
+            onSave={() => window.dispatchEvent(new CustomEvent('grafted:memory-saved'))}
           />
         )}
 

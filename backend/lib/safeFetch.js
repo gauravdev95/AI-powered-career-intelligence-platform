@@ -230,7 +230,7 @@ export async function safeFetchText(rawUrl, {
   timeoutMs = config.ingest.fetchTimeoutMs,
   maxBytes = config.ingest.maxFetchBytes,
   maxRedirects = config.ingest.maxRedirects,
-  userAgent = 'Mozilla/5.0 (compatible; DevRadar/2.0; +https://devradar.app)',
+  userAgent = 'Mozilla/5.0 (compatible; Grafted/2.0; +https://grafted.app)',
 } = {}) {
   let target = rawUrl
   const started = Date.now()

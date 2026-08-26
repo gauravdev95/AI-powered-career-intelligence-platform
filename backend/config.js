@@ -61,11 +61,9 @@ export const config = {
 
   http: {
     corsOrigins: list('CORS_ORIGIN', [
+      'https://ai-powered-career-intelligence-platform-y3cn.onrender.com',
       'http://localhost:5173', 'http://127.0.0.1:5173',
       'http://localhost:5174', 'http://127.0.0.1:5174',
-      'http://localhost:5175', 'http://127.0.0.1:5175',
-      'http://localhost:5176', 'http://127.0.0.1:5176',
-      'http://localhost:5177', 'http://127.0.0.1:5177',
       'http://localhost:3000',
     ]),
     allowVercelPreviews: bool('CORS_ALLOW_VERCEL_PREVIEWS', true),
@@ -94,7 +92,7 @@ export const config = {
   redis: {
     url: str('REDIS_URL'),
     enabled: bool('REDIS_ENABLED', Boolean(str('REDIS_URL'))),
-    keyPrefix: str('REDIS_KEY_PREFIX', 'devradar:'),
+    keyPrefix: str('REDIS_KEY_PREFIX', 'grafted:'),
     defaultTtlSeconds: num('REDIS_TTL_SECONDS', 300),
   },
 
@@ -155,7 +153,7 @@ export function validateConfig() {
   const warnings = []
 
   if (config.db.driver === 'pg' && !config.db.url) {
-    throw new Error('DATABASE_URL is required when DATABASE_DRIVER=pg. PostgreSQL is the source of truth for DevRadar memory.')
+    throw new Error('DATABASE_URL is required when DATABASE_DRIVER=pg. PostgreSQL is the source of truth for Grafted memory.')
   }
   if (config.isProduction && config.db.driver !== 'pg') {
     throw new Error('DATABASE_DRIVER must be "pg" in production. The pglite driver is for tests and local development only.')

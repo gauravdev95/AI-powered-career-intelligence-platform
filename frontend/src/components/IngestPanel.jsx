@@ -2,8 +2,6 @@ import { useRef, useState, useCallback } from 'react'
 import axios, { aiRequest } from '../lib/api.js'
 import { Icon } from './icons.jsx'
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
-
 const TABS = [
   { id: 'text', label: 'Paste text' },
   { id: 'url', label: 'URL' },
@@ -45,7 +43,7 @@ export default function IngestPanel({ userId, onPagesCreated }) {
     addLog('info', tab === 'url' ? `Fetching ${value.slice(0, 60)}…` : 'Processing input…')
 
     try {
-      const { data } = await axios.post(`${API_BASE}/api/ingest`, { userId, input: value }, aiRequest())
+      const { data } = await axios.post('/api/ingest', { userId, input: value }, aiRequest())
 
       const totalEntities = (data.entities?.companies ?? 0) + (data.entities?.skills ?? 0)
         + (data.entities?.hackathons ?? 0) + (data.entities?.gaps ?? 0)

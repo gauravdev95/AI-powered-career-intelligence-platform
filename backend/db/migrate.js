@@ -33,7 +33,7 @@ function splitStatements(sql) {
 
 /** Vector index definitions, applied best-effort after the base schema. */
 function annIndexStatements(dim) {
-  // HNSW gives good recall at DevRadar's scale. If the server's pgvector is too old,
+  // HNSW gives good recall at Grafted's scale. If the server's pgvector is too old,
   // the statement fails and we fall back to exact search (a sequential scan).
   return [
     `CREATE INDEX IF NOT EXISTS memories_embedding_hnsw_idx
@@ -96,7 +96,7 @@ async function assertEmbeddingDimension(expected, warnings) {
   }
 }
 
-/** Drops every DevRadar table. Destructive; intended for tests and local resets. */
+/** Drops every Grafted table. Destructive; intended for tests and local resets. */
 export async function reset() {
   await exec(`
     DROP TABLE IF EXISTS ingest_log, conversation_turns, journey_events,

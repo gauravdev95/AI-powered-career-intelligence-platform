@@ -46,7 +46,7 @@ cp .env.example .env
 Edit `.env`:
 
 ```bash
-DATABASE_URL=postgresql://user:password@localhost:5432/devradar
+DATABASE_URL=postgresql://user:password@localhost:5432/grafted
 GEMINI_API_KEY=your-key-here     # optional
 ```
 

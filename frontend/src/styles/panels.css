@@ -1,12 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   PANELS — BLUEPRINT LEDGER
-   Styling for the components converted off inline style objects: the wiki browser,
-   the journey timeline, the logo marks, and the graph crosshair readout.
+   PANELS — MODERN DESIGN
+   Wiki, sidebar, detail panels with glass-morphism and modern aesthetics.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Tone map ────────────────────────────────────────────────────────────────
-   One place that turns a semantic tone into a colour. Components set
-   data-tone="blue|accent|ochre|moss|ink" and never touch a hex. */
+/* ── Tone map ──────────────────────────────────────────────────────────────── */
 
 [data-tone='accent'] { --tone: var(--accent); --tone-bg: var(--accent-bg); }
 [data-tone='blue']   { --tone: var(--blue);   --tone-bg: var(--blue-bg); }
@@ -18,25 +15,29 @@
    LOGO
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.logo-mark { display: block; }
+.logo-mark {
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+}
 
-.logo-blip { animation: blink-mark 1.4s steps(1, end) infinite; }
+.logo-blip {
+  animation: blink-mark 1.4s steps(1, end) infinite;
+}
 
 .logo-text {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   line-height: 1;
 }
+
 .logo-text--lg { font-size: clamp(30px, 5vw, 60px); }
 .logo-text--md { font-size: clamp(20px, 3vw, 32px); }
 .logo-text--sm { font-size: clamp(15px, 2vw, 20px); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    GRAPH CROSSHAIR READOUT
-   A drafting-table cursor: the pointer becomes a crosshair and its coordinates
-   are printed in the corner, like an instrument panel.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .graph-crosshair {
@@ -50,35 +51,38 @@
 .graph-crosshair-y {
   position: absolute;
   background: var(--accent);
-  opacity: 0.45;
+  opacity: 0.3;
+  transition: opacity 200ms;
 }
 .graph-crosshair-x { left: 0; right: 0; height: 1px; }
 .graph-crosshair-y { top: 0; bottom: 0; width: 1px; }
 
 .graph-readout {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
+  bottom: 16px;
+  right: 16px;
   z-index: 13;
   display: flex;
-  gap: 10px;
-  padding: 5px 9px;
-  background: var(--ink);
-  color: var(--bg-base);
-  border: var(--rule-width) solid var(--ink);
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
+  box-shadow: var(--shadow-block-sm);
 }
 
-.graph-readout-k { opacity: 0.55; }
+.graph-readout-k { opacity: 0.6; }
 
 .graph-network { cursor: crosshair; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   WIKI PANEL
+   WIKI PANEL — Modern Glass Design
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .wiki-panel {
@@ -86,380 +90,668 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--bg-base);
+  background: var(--glass);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border-left: 1px solid var(--glass-border);
 }
 
 .wiki-toolbar {
   display: flex;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: var(--rule-width) solid var(--ink);
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-hair);
+  background: var(--glass-strong);
 }
 
 .wiki-search {
   flex: 1;
   min-width: 0;
-  padding: 6px 10px;
+  padding: 10px 14px;
   background: var(--bg-surface0);
-  border: var(--rule-width) solid var(--ink);
-  border-radius: 0;
-  font-family: var(--font-mono);
-  font-size: 12px;
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
   color: var(--ink);
   outline: none;
+  transition: border-color 200ms, box-shadow 200ms;
 }
+
 .wiki-search::placeholder { color: var(--ink-4); }
-.wiki-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.wiki-search:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-bg);
+}
 
 .wiki-refresh {
-  padding: 6px 11px;
+  padding: 10px 16px;
   background: var(--bg-surface0);
-  border: var(--rule-width) solid var(--ink);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
   color: var(--ink);
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: var(--shadow-block-sm);
-  transition: box-shadow var(--dur-fast) var(--ease-mech), transform var(--dur-fast) var(--ease-mech);
+  transition: all 200ms var(--ease-mech);
 }
-.wiki-refresh:hover { box-shadow: none; transform: translate(2px, 2px); }
+
+.wiki-refresh:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+  transform: translateY(-2px);
+}
 
 .wiki-filters {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   flex-wrap: wrap;
-  padding: 8px 14px;
-  border-bottom: var(--rule-width) solid var(--ink);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-hair);
 }
 
 .wiki-filter {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 3px 8px;
-  border: var(--rule-width) solid var(--border-hair);
-  border-radius: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--ink-3);
   cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-mech), color var(--dur-fast) var(--ease-mech);
+  transition: all 200ms var(--ease-mech);
 }
-.wiki-filter:hover { border-color: var(--ink); color: var(--ink); }
-.wiki-filter.is-active {
-  background: var(--tone, var(--ink));
+
+.wiki-filter:hover {
   border-color: var(--ink);
-  color: var(--bg-base);
+  color: var(--ink);
+  background: var(--glass);
 }
 
-.wiki-body { flex: 1; display: flex; min-height: 0; }
-
-.wiki-list { width: 100%; overflow-y: auto; }
-.wiki-list.is-split {
-  width: 38%;
-  flex-shrink: 0;
-  border-right: var(--rule-width) solid var(--ink);
+.wiki-filter.is-active {
+  background: var(--tone, var(--accent));
+  border-color: var(--tone, var(--accent));
+  color: var(--accent-ink);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.25);
 }
 
-.wiki-row {
+.wiki-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-4) transparent;
+}
+
+.wiki-entry {
+  padding: 16px;
+  margin-bottom: 12px;
+  background: var(--bg-surface0);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-md);
+  transition: all 200ms var(--ease-mech);
+}
+
+.wiki-entry:hover {
+  border-color: var(--blue);
+  box-shadow: 0 4px 16px rgba(0, 210, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.wiki-entry-title {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
-  padding: 9px 14px;
-  text-align: left;
-  background: none;
-  border: none;
-  border-bottom: var(--rule-width) solid var(--border-hair);
-  border-left: 3px solid transparent;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-mech);
-}
-.wiki-row:hover { background: var(--bg-mantle); }
-.wiki-row.is-selected {
-  background: var(--bg-surface0);
-  border-left-color: var(--tone, var(--accent));
+  margin-bottom: 8px;
 }
 
-.wiki-row-glyph { flex-shrink: 0; font-size: 13px; color: var(--tone, var(--ink)); }
+.wiki-entry-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 
-.wiki-row-main { min-width: 0; flex: 1; display: block; }
-
-.wiki-row-name {
-  display: block;
-  font-size: 13px;
+.wiki-entry-kind {
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 600;
-  color: var(--ink);
-  text-transform: capitalize;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wiki-row-meta {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink-4);
-  margin-top: 2px;
-  letter-spacing: 0.04em;
-}
-
-.wiki-status { padding: 16px; font-size: 12px; color: var(--ink-3); }
-.wiki-status.is-error { color: var(--accent); }
-
-.wiki-empty { padding: 20px; text-align: center; }
-.wiki-empty-title { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
-.wiki-empty-body { font-size: 11px; color: var(--ink-4); }
-
-/* ── Document ────────────────────────────────────────────────────────────── */
-
-.wiki-doc { flex: 1; min-width: 0; overflow-y: auto; padding: 14px 16px; }
-
-.wiki-back {
-  background: none;
-  border: none;
-  padding: 0;
-  margin-bottom: 12px;
-  font-family: var(--font-mono);
-  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--ink-3);
-  cursor: pointer;
-}
-.wiki-back:hover { color: var(--accent); }
-
-.wiki-source {
-  margin-top: 16px;
-  padding-top: 8px;
-  border-top: var(--rule-width) solid var(--border-hair);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink-4);
-  word-break: break-all;
 }
 
-.wiki-space { height: 8px; }
-
-.wiki-h2 {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 400;
-  color: var(--ink);
-  margin: 0 0 12px;
-  letter-spacing: -0.02em;
-}
-
-.wiki-h3 {
-  font-family: var(--font-body);
-  font-size: 12px;
+.wiki-entry-name {
+  font-size: 15px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
   color: var(--ink);
-  margin: 20px 0 6px;
-  padding-bottom: 4px;
-  border-bottom: var(--rule-width) solid var(--ink);
 }
 
-.wiki-h4 {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ink-3);
-  margin: 16px 0 4px;
-}
-
-.wiki-p { font-size: 13px; color: var(--ink-2); line-height: 1.65; margin: 4px 0; }
-
-.wiki-li { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; }
-.wiki-li-mark {
-  flex-shrink: 0;
-  width: 5px;
-  height: 5px;
-  margin-top: 7px;
-  background: var(--accent);
-}
-.wiki-li-text { font-size: 13px; color: var(--ink-2); line-height: 1.6; }
-
-.wiki-task { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; }
-.wiki-task-box {
-  flex-shrink: 0;
-  width: 13px;
-  height: 13px;
-  margin-top: 3px;
-  border: var(--rule-width) solid var(--ink);
-  background: var(--bg-surface0);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 11px;
-  text-align: center;
-  color: var(--accent);
-}
-.wiki-task-text { font-size: 13px; color: var(--ink-2); line-height: 1.6; }
-.wiki-task.is-done .wiki-task-text { color: var(--ink-4); text-decoration: line-through; }
-
-.wiki-rule { border: none; border-top: var(--rule-width) solid var(--border-hair); margin: 12px 0; }
-
-.wiki-pre {
-  padding: 8px 10px;
-  margin: 8px 0;
-  background: var(--bg-mantle);
-  border: var(--rule-width) solid var(--ink);
-  font-family: var(--font-mono);
-  font-size: 11px;
+.wiki-entry-body {
+  font-size: 13px;
+  line-height: 1.65;
   color: var(--ink-2);
-  overflow-x: auto;
+  margin-top: 10px;
 }
 
-.wiki-strong { color: var(--ink); font-weight: 700; }
-
-.wiki-code {
-  padding: 1px 5px;
-  background: var(--bg-mantle);
-  border: var(--rule-width) solid var(--border-hair);
+.wiki-entry-meta {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-hair);
   font-family: var(--font-mono);
-  font-size: 0.9em;
-  color: var(--ink);
-}
-
-.wiki-link {
-  color: var(--blue);
-  font-weight: 600;
-  box-shadow: inset 0 -1px 0 var(--blue);
+  font-size: 11px;
+  color: var(--ink-3);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   JOURNEY VIEW
+   DETAIL PANEL — Glass Card Design
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.journey-view { padding: 14px 16px; overflow-y: auto; height: 100%; }
-
-.journey-header {
+.detail-panel {
+  height: 100%;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding-bottom: 10px;
-  margin-bottom: 14px;
-  border-bottom: var(--rule-width) solid var(--ink);
+  flex-direction: column;
+  background: var(--glass);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  border-left: 1px solid var(--glass-border);
+  overflow: hidden;
 }
 
-.journey-heading {
+.detail-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-hair);
+  background: var(--glass-strong);
+}
+
+.detail-title {
   font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 400;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--ink);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
-.journey-count {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.detail-subtitle {
+  font-size: 12px;
   color: var(--ink-3);
+  margin-top: 4px;
 }
 
-.journey-loading { display: flex; flex-direction: column; align-items: center; padding: 40px 16px; }
-.journey-loading-text { margin-top: 12px; font-size: 13px; color: var(--ink-3); }
-.journey-error { padding: 16px; font-size: 13px; color: var(--accent); }
-
-.journey-list { display: flex; flex-direction: column; }
-
-.journey-entry { display: flex; gap: 12px; }
-
-.journey-line { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-
-.journey-dot {
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: var(--tone, var(--ink));
-  border: var(--rule-width) solid var(--ink);
-  color: var(--bg-base);
-}
-
-.journey-dot-glyph { font-size: 11px; line-height: 1; }
-
-.journey-connector { flex: 1; width: 1px; background: var(--border-hair); }
-.journey-entry:last-child .journey-connector { background: transparent; }
-
-.journey-card {
+.detail-content {
   flex: 1;
-  min-width: 0;
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  background: var(--bg-surface0);
-  border: var(--rule-width) solid var(--ink);
-  box-shadow: var(--shadow-block-sm);
+  overflow-y: auto;
+  padding: 20px;
 }
 
-.journey-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
+.detail-section {
+  margin-bottom: 24px;
 }
 
-.journey-type-badge {
+.detail-section-title {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 2px 6px;
-  background: var(--tone-bg, var(--bg-surface1));
-  border: var(--rule-width) solid var(--tone, var(--ink));
-  color: var(--ink);
+  color: var(--ink-3);
+  margin-bottom: 12px;
 }
 
-.journey-time {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink-4);
-  white-space: nowrap;
+.detail-meter {
+  height: 8px;
+  background: var(--bg-surface0);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-top: 6px;
 }
 
-.journey-title { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.45; }
-.journey-desc { font-size: 12px; color: var(--ink-3); line-height: 1.55; margin-top: 3px; }
+.detail-meter-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--grad-accent);
+  transition: width 600ms var(--ease-mech);
+}
 
-.journey-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
 
-.journey-tag {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  padding: 2px 6px;
-  border: var(--rule-width) solid var(--tone, var(--ink));
+.detail-tag {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  font-size: 12px;
+  font-weight: 600;
   color: var(--ink-2);
 }
 
-.journey-empty { padding: 24px 16px; text-align: center; }
-.journey-empty-mark { font-size: 34px; color: var(--ink-4); margin-bottom: 12px; }
-.journey-empty-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
-.journey-empty-body { font-size: 12px; color: var(--ink-3); line-height: 1.6; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   JOURNEY VIEW — Timeline
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.journey-tips { display: flex; flex-direction: column; gap: 6px; margin-top: 20px; text-align: left; }
-
-.journey-tip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  background: var(--bg-surface0);
-  border: var(--rule-width) solid var(--ink);
-  border-left: 3px solid var(--tone, var(--ink));
+.journey-view {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
 }
 
-.journey-tip-icon { font-size: 13px; color: var(--tone, var(--ink)); }
-.journey-tip-text { font-size: 12px; color: var(--ink-2); }
+.journey-timeline {
+  position: relative;
+  padding-left: 28px;
+}
 
-/* Classes flagged by the coverage audit. */
-.grafted-mark { display: block; flex-shrink: 0; }
-.wiki-doc-body { display: block; }
-.week-section { margin-bottom: 14px; }
+.journey-timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--blue), var(--ochre));
+  border-radius: var(--radius-pill);
+}
+
+.journey-event {
+  position: relative;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  transition: all 200ms var(--ease-mech);
+}
+
+.journey-event:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-block-sm);
+}
+
+.journey-event::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 20px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--bg-base);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.journey-event-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-bottom: 6px;
+}
+
+.journey-event-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.journey-event-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin-top: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INGEST PANEL
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ingest-panel {
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.ingest-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 16px;
+  background: var(--bg-surface0);
+  border: 2px solid var(--border-hair);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  resize: vertical;
+  outline: none;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+
+.ingest-input::placeholder { color: var(--ink-4); }
+
+.ingest-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px var(--blue-bg);
+}
+
+.ingest-button {
+  width: 100%;
+  padding: 14px 24px;
+  margin-top: 16px;
+  background: var(--grad-accent);
+  border: none;
+  border-radius: var(--radius-pill);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms var(--ease-mech);
+  box-shadow: 0 6px 20px rgba(245, 87, 108, 0.35);
+}
+
+.ingest-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(245, 87, 108, 0.45);
+}
+
+.ingest-button:active {
+  transform: translateY(-1px);
+}
+
+.ingest-results {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHAT INTERFACE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.chat-interface {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-message {
+  max-width: 80%;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.chat-message--user {
+  align-self: flex-end;
+  background: var(--grad-accent);
+  color: #ffffff;
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.chat-message--bot {
+  align-self: flex-start;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--ink);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.chat-input-area {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-hair);
+  background: var(--glass-strong);
+  display: flex;
+  gap: 12px;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--bg-surface0);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+
+.chat-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-bg);
+}
+
+.chat-send {
+  padding: 12px 20px;
+  background: var(--grad-accent);
+  border: none;
+  border-radius: var(--radius-pill);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms var(--ease-mech);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
+
+.chat-send:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROADMAP VIEW
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.roadmap-view {
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.roadmap-phase {
+  margin-bottom: 28px;
+  padding: 20px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--accent);
+}
+
+.roadmap-phase--complete {
+  border-left-color: var(--moss);
+}
+
+.roadmap-phase-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.roadmap-phase-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.roadmap-tasks {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.roadmap-task {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-surface0);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--ink-2);
+  transition: all 200ms var(--ease-mech);
+}
+
+.roadmap-task:hover {
+  background: var(--glass-hi);
+  transform: translateX(4px);
+}
+
+.roadmap-task-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-hair);
+  flex-shrink: 0;
+}
+
+.roadmap-task-check--done {
+  background: var(--moss);
+  border-color: var(--moss);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MEMORY BADGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.memory-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.memory-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EVENT & STAT BADGES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.event-badge,
+.stat-badge,
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.event-badge--accent,
+.stat-badge--accent,
+.count-badge--accent {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMPTY STATES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.empty-state-body {
+  font-size: 14px;
+  color: var(--ink-3);
+  max-width: 300px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOADING STATES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-hair);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-surface0) 25%,
+    var(--bg-surface1) 50%,
+    var(--bg-surface0) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

@@ -7,7 +7,7 @@
  * changes.
  *
  * Every task degrades to a deterministic fallback when the provider is unavailable,
- * so DevRadar stays usable (with reduced intelligence) without an API key.
+ * so Grafted stays usable (with reduced intelligence) without an API key.
  */
 
 import config from '../config.js'

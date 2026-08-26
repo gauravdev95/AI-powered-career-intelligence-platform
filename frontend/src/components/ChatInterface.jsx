@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import axios, { aiRequest } from '../lib/api.js'
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
-
 const SUGGESTED_QUESTIONS = [
   'Which companies should I apply to first?',
   'What skills should I learn next?',
@@ -68,7 +66,7 @@ export default function ChatInterface({ userId, userStack, wikiPageCount }) {
     setLoading(true)
 
     try {
-      const { data } = await axios.post(`${API_BASE}/api/chat`, {
+      const { data } = await axios.post('/api/chat', {
         userId,
         question: q,
         userStack,

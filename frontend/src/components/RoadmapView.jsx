@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import axios, { aiRequest } from '../lib/api.js'
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
-
 const TYPE_COLORS = {
   course: '#3B82F6',
   docs: '#8B5CF6',
@@ -98,7 +96,7 @@ export default function RoadmapView({ userId }) {
     setLoading(true)
     setError(null)
     try {
-      const { data } = await axios.get(`${API_BASE}/api/roadmap/${userId}`, aiRequest())
+      const { data } = await axios.get(`/api/roadmap/${userId}`, aiRequest())
       setRoadmap(data)
     } catch (err) {
       setError(err.appMessage ?? 'Failed to load roadmap')

@@ -12,8 +12,6 @@ import { isSameSkill } from '../lib/graph.js'
  *      a stylesheet — its width. Colour, tone and spacing are classes on tokens.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
-
 const clamp01 = value => Math.min(1, Math.max(0, value))
 
 function toneForScore(score) {
@@ -212,7 +210,7 @@ function SkillGapContent({ node, userId, userStack, onLearned }) {
   async function markLearned() {
     if (userId && !userStack.includes(gap.skill)) {
       try {
-        await axios.post(`${API_BASE}/api/user/${userId}/stack`, { stack: [...userStack, gap.skill] })
+        await axios.post(`/api/user/${userId}/stack`, { stack: [...userStack, gap.skill] })
       } catch {
         // Local state still advances — the next sync will reconcile the stack.
       }

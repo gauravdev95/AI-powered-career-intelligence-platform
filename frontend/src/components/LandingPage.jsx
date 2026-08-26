@@ -139,12 +139,10 @@ const NAV_LINKS = [
 ]
 
 /**
- * Site navbar.
+ * Site navbar — Modern glass-morphism design.
  *
- * Sits transparent over the illustrated hero, then solidifies once the hero is
- * behind you — so the links stay legible against cream without a hard cut. Tracks
- * which section is in view and marks the matching link. Collapses to a full-screen
- * sheet under 860px.
+ * Starts transparent over the hero, gains a frosted glass effect once the hero
+ * scrolls behind. Track active section for link highlighting.
  */
 function Navbar({ onStart, onContinue, isReturning }) {
   const [solid, setSolid] = useState(false)
@@ -155,7 +153,7 @@ function Navbar({ onStart, onContinue, isReturning }) {
     let frame = 0
     const update = () => {
       frame = 0
-      setSolid(window.scrollY > window.innerHeight * 0.72)
+      setSolid(window.scrollY > window.innerHeight * 0.65)
     }
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(update) }
     update()
@@ -207,15 +205,14 @@ function Navbar({ onStart, onContinue, isReturning }) {
           onClick={e => { e.preventDefault(); setOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
         >
           <span className="nav-logo" aria-hidden="true">
-            {/* Graft glyph: rootstock, two grafted shoots, and the binding across
-                the union. The tie is the whole idea — the join is what holds. */}
             <svg viewBox="0 0 32 32">
-              <path d="M16 30 V17" className="nl-stock" />
-              <path d="M16 17 L24 8" className="nl-scion" />
-              <path d="M16 19 L9 11" className="nl-scion nl-scion--b" />
-              <path d="M11.5 19.5 H20.5 M11.5 22.5 H20.5" className="nl-tie" />
-              <rect x="22" y="6" width="4" height="4" className="nl-bud" />
-              <rect x="7" y="9" width="4" height="4" className="nl-bud nl-bud--alt" />
+              <path d="M16 30 V17" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M16 17 L24 8" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M16 19 L9 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M11.5 19.5 H20.5 M11.5 22.5 H20.5" stroke="#00d2ff" strokeWidth="1.5" strokeLinecap="round" />
+              <rect x="22" y="6" width="4" height="4" fill="#a855f7" />
+              <rect x="7" y="9" width="4" height="4" fill="#ec4899" />
+              <rect x="14" y="15" width="4" height="4" fill="#00d2ff" />
             </svg>
           </span>
           <span className="nav-word">grafted</span>
@@ -236,7 +233,7 @@ function Navbar({ onStart, onContinue, isReturning }) {
 
         <div className="nav-actions">
           {isReturning && (
-            <button type="button" className="nav-secondary" onClick={onContinue}>
+            <button type="button" className="btn btn--secondary btn--sm" onClick={onContinue}>
               My graph
             </button>
           )}
@@ -278,39 +275,42 @@ function Navbar({ onStart, onContinue, isReturning }) {
 // ── Hero artwork ─────────────────────────────────────────────────────────────
 
 /**
- * The graft.
- *
- * A cross-section: air above, soil below, and one plant crossing the line. The
- * rootstock is what was already there; the scions are bound onto it at a union
- * and carry the canopy of career nodes — skills, companies, events, gaps, in the
- * app's own semantic colours.
- *
- * Nothing here sweeps, scans or pings. The plant *draws itself on* once and then
- * holds, which is the whole claim: what you add stays added.
- *
- * Built from SVG rather than a bitmap so it stays crisp at any width, themes from
- * tokens, and costs no image request.
+ * Modern hero scene with animated gradient orbs and floating particles.
+ * Replaces the old soil/air illustration with a dynamic, visually striking background.
  */
 function HeroScene({ scrollY }) {
+  const particles = useMemo(() => {
+    return Array.from({ length: 25 }, (_, i) => ({
+      id: i,
+      left: `${5 + (i * 37) % 90}%`,
+      delay: `${(i * 0.6) % 15}s`,
+      duration: `${12 + (i % 8)}s`,
+      size: `${3 + (i % 3)}px`,
+    }))
+  }, [])
+
   return (
     <div className="hero-scene" aria-hidden="true">
-      <div className="hero-air" />
+      {/* Animated gradient orbs */}
+      <div className="hero-orb hero-orb--1" style={{ transform: `translate3d(0, ${scrollY * 0.08}px, 0)` }} />
+      <div className="hero-orb hero-orb--2" style={{ transform: `translate3d(0, ${scrollY * -0.1}px, 0)` }} />
+      <div className="hero-orb hero-orb--3" style={{ transform: `translate3d(0, ${scrollY * 0.06}px, 0)` }} />
 
-      {/* Soil. A grain band that fades upward rather than a ruled horizon — a hard
-          line across the hero read as a chart axis and fought the drawing. */}
-      <div className="graft-ground" />
-
-      {/* Drifting seed squares. They replace the clouds and keep the same parallax
-          role, but they are graph-shaped, not weather-shaped. */}
-      <div className="graft-motes graft-motes--far" style={{ transform: `translate3d(${scrollY * -0.06}px, ${scrollY * 0.05}px, 0)` }}>
-        <Mote x={9} y={20} scale={1} />
-        <Mote x={40} y={12} scale={0.7} />
-        <Mote x={62} y={30} scale={0.5} />
-      </div>
-
-      <div className="graft-motes graft-motes--near" style={{ transform: `translate3d(${scrollY * 0.1}px, ${scrollY * 0.12}px, 0)` }}>
-        <Mote x={18} y={46} scale={1.4} />
-        <Mote x={31} y={70} scale={1} />
+      {/* Floating particles */}
+      <div className="hero-particles">
+        {particles.map(p => (
+          <div
+            key={p.id}
+            className="particle"
+            style={{
+              left: p.left,
+              width: p.size,
+              height: p.size,
+              animationDelay: p.delay,
+              animationDuration: p.duration,
+            }}
+          />
+        ))}
       </div>
     </div>
   )

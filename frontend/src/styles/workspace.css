@@ -1,17 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
    GRAFTED — WORKSPACE
-   The app shell's own surfaces: focus breadcrumb, canvas lane captions, the
-   sidebar index, and the detail panel's labelled meters.
-
-   Every colour is a token from blueprint-tokens.css. Blueprint Ledger rules hold
-   throughout: zero radius, 1px ink rules, hard offset blocks that press down on
-   hover, hard focus outlines, and 180–240ms stepped motion.
+   Modern workspace design with glass-morphism, smooth transitions, and clean aesthetics.
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    FOCUS BREADCRUMB
-   Sits between the topbar and the canvas. The trail is the navigation model —
-   the canvas shows one neighbourhood at a time, and this is how you get back.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .graph-breadcrumb {
@@ -25,9 +18,10 @@
   justify-content: space-between;
   gap: 12px;
   height: var(--crumb-height);
-  padding: 0 16px;
-  border-bottom: var(--rule-width) solid var(--border-hair);
-  background: var(--bg-base);
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border-hair);
+  background: var(--glass);
+  backdrop-filter: blur(12px) saturate(180%);
 }
 
 .crumb-list {
@@ -50,43 +44,46 @@
 }
 
 .crumb-sep {
-  padding: 0 6px;
-  color: var(--text-faint);
+  padding: 0 8px;
+  color: var(--ink-4);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .crumb-btn {
-  height: 22px;
-  max-width: 190px;
-  padding: 0 8px;
-  border: var(--rule-width) solid transparent;
+  height: 26px;
+  max-width: 200px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.02em;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: color var(--dur-fast) var(--ease-mech), border-color var(--dur-fast) var(--ease-mech);
+  transition: all 200ms var(--ease-mech);
 }
 
 .crumb-btn:hover {
   border-color: var(--border-hair);
+  background: var(--glass);
   color: var(--text);
 }
 
 .crumb-btn.is-current {
-  border-color: var(--ink);
-  background: var(--bg-surface0);
-  color: var(--text);
-  font-weight: 600;
-  box-shadow: var(--shadow-press);
+  border-color: var(--blue);
+  background: var(--blue-bg);
+  color: var(--blue);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 210, 255, 0.2);
 }
 
-/* The trail is colour-keyed to the node type, so the path reads at a glance. */
+/* Color-coded crumbs */
 .crumb-btn--skill_known.is-current { border-left: 3px solid var(--node-skill); }
 .crumb-btn--skill_gap.is-current   { border-left: 3px solid var(--node-gap); }
 .crumb-btn--startup.is-current     { border-left: 3px solid var(--node-company); }
@@ -96,17 +93,15 @@
 .crumb-note {
   flex: 0 0 auto;
   margin: 0;
-  color: var(--text-faint);
+  color: var(--ink-4);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    CANVAS LANE CAPTIONS
-   Only drawn for the split layouts (company / event focus), where the left–right
-   division carries the answer and colour alone would under-state it.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .focus-lane {
@@ -115,22 +110,25 @@
   z-index: 14;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
-  padding: 4px 9px;
-  border: var(--rule-width) solid var(--ink);
-  background: var(--bg-surface0);
-  box-shadow: var(--shadow-block-sm);
+  padding: 8px 14px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   pointer-events: none;
   transform: translateY(-50%);
+  box-shadow: var(--shadow-block-sm);
 }
 
-.focus-lane--left  { left: 18px; }
-.focus-lane--right { right: 18px; }
+.focus-lane--left  { left: 20px; }
+.focus-lane--right { right: 20px; }
 
 .focus-lane--skill_known { border-left: 3px solid var(--node-skill); color: var(--node-skill); }
 .focus-lane--skill_gap   { border-left: 3px solid var(--node-gap); color: var(--node-gap); }
@@ -138,382 +136,506 @@
 .focus-lane--hackathon   { border-left: 3px solid var(--node-hackathon); color: var(--node-hackathon); }
 
 .focus-lane-count {
-  padding-left: 8px;
-  border-left: var(--rule-width) solid var(--border-hair);
-  color: var(--text-muted);
+  padding-left: 10px;
+  border-left: 1px solid var(--border-hair);
+  color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   SIDEBAR — BRAND
+   SIDEBAR — Modern Glass Panel
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.brand-row {
+/* NOTE: .sidebar is defined in index.css. Do NOT redefine here. */
+
+.sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 9px;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  text-align: left;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-hair);
 }
 
-.brand-text {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-}
-
-.brand-word {
-  color: var(--text);
-  font-family: var(--font-display);
-  font-size: 19px;
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
-.brand-tagline {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   SIDEBAR — INDEX
-   A table, not a tree: mark · label · score, on a fixed three-column grid so the
-   score column stays flush no matter how long the labels get.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.sidebar-scroll {
+.sidebar-nav {
   flex: 1;
-  min-height: 0;
   overflow-y: auto;
-  padding-bottom: 8px;
+  padding: 16px;
 }
 
-.nav-section { padding: 0 0 10px; }
+.sidebar-section {
+  margin-bottom: 24px;
+}
 
-.nav-section-head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+.sidebar-section-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 12px;
+  padding: 0 8px;
+}
+
+.sidebar-link {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 0;
-  padding: 7px 12px 6px;
-  border-bottom: var(--rule-width) solid var(--border-hair);
-  background: var(--bg-mantle);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
-.nav-section-title { color: var(--text-muted); }
-
-.nav-section-count {
-  padding: 0 5px;
-  background: var(--bg-crust);
-  color: var(--text-sub);
-  font-variant-numeric: tabular-nums;
-}
-
-.nav-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.nav-row {
-  display: grid;
-  grid-template-columns: 14px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  min-height: 30px;
-  padding: 0 12px;
-  border: 0;
-  border-left: 3px solid transparent;
-  background: transparent;
-  color: var(--text-sub);
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 200ms var(--ease-mech);
   cursor: pointer;
-  text-align: left;
-  transition:
-    background var(--dur-fast) var(--ease-mech),
-    color var(--dur-fast) var(--ease-mech),
-    border-color var(--dur-fast) var(--ease-mech);
 }
 
-.nav-row:hover {
-  background: var(--bg-surface1);
-  color: var(--text);
+.sidebar-link:hover {
+  background: var(--glass-hi);
+  color: var(--ink);
+  transform: translateX(4px);
 }
 
-/* Selected row = the node at the centre of the canvas. One state, one source. */
-.nav-row.is-current {
-  border-left-color: var(--accent);
+.sidebar-link.is-active {
   background: var(--accent-bg);
-  color: var(--text);
-  font-weight: 600;
-}
-
-.row-mark {
-  display: grid;
-  place-items: center;
-  width: 14px;
-  height: 14px;
-  color: var(--text-faint);
-}
-
-.row-mark svg { width: 14px; height: 14px; }
-
-.nav-row.is-current .row-mark { color: var(--accent); }
-
-/* Type swatches keep the graph's semantic contract in the list. */
-.row-swatch {
-  width: 9px;
-  height: 9px;
-  border: var(--rule-width) solid var(--ink);
-}
-
-.row-swatch--skill     { background: var(--node-skill); }
-.row-swatch--gap       { background: var(--node-gap); }
-.row-swatch--company   { background: var(--node-company); }
-.row-swatch--hackathon { background: var(--node-hackathon); }
-
-.row-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-  line-height: 1.3;
-}
-
-.row-score {
-  min-width: 38px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  letter-spacing: 0.02em;
-}
-
-.row-score--moss   { color: var(--moss); }
-.row-score--blue   { color: var(--blue); }
-.row-score--ochre  { color: var(--ochre); }
-.row-score--danger { color: var(--accent); }
-.row-score--muted,
-.row-score--empty  { color: var(--text-faint); }
-
-.nav-note {
-  padding: 2px 12px 6px 38px;
-  color: var(--text-faint);
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.nav-empty {
-  padding: 8px 12px;
-  color: var(--text-faint);
-  font-size: 12px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   DETAIL PANEL — METERS
-   No bare 0–100 bar exists in this app. A meter always states its subject, its
-   value and its unit above the track.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.meter { display: grid; gap: 6px; }
-
-.meter-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.meter-label {
-  color: var(--text-sub);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.meter-value {
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.meter-max {
-  color: var(--text-faint);
-  font-size: 11px;
-}
-
-.meter-track {
-  height: 8px;
-  border: var(--rule-width) solid var(--ink);
-  background: var(--bg-surface1);
-}
-
-.meter-fill {
-  height: 100%;
-  transition: width var(--dur-slow) var(--ease-mech);
-}
-
-.meter-fill--moss   { background: var(--moss); }
-.meter-fill--blue   { background: var(--blue); }
-.meter-fill--ochre  { background: var(--ochre); }
-.meter-fill--accent { background: var(--accent); }
-
-.meter-note {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   DETAIL PANEL — HAVE / MISSING SPLIT
-   Mirrors the canvas layout: covered on the left, missing on the right.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.split-col { min-width: 0; }
-
-.split-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin: 0 0 7px;
-  padding-bottom: 4px;
-  border-bottom: 2px solid var(--border-hair);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
-.split-head--have    { border-bottom-color: var(--node-skill); color: var(--node-skill); }
-.split-head--missing { border-bottom-color: var(--node-gap); color: var(--node-gap); }
-
-.split-n {
-  color: var(--text-faint);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   DETAIL PANEL — SMALL PARTS
-   Replaces the inline style objects that used to live in DetailPanel.jsx.
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.panel-prose {
-  margin: 0;
-  color: var(--text-sub);
-  font-size: 13px;
-  line-height: 1.55;
-}
-
-.panel-link {
-  display: inline-block;
-  margin-top: 10px;
   color: var(--accent);
-  font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
-.pill-row--spaced { margin-bottom: 12px; }
-
-.val-moss   { color: var(--moss); }
-.val-accent { color: var(--accent); }
-
-.profile-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.sidebar-link-icon {
+  width: 20px;
+  text-align: center;
+  opacity: 0.7;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   APP SHELL — BANNERS
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.app-banners {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-}
-
-.waking-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
-  border-bottom: var(--rule-width) solid var(--warning-border);
-  background: var(--warning-bg);
-}
-
-.waking-mark { font-size: 13px; }
-
-.waking-copy {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.waking-copy strong {
-  color: var(--text);
+.sidebar-link-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 700;
 }
 
-.app-error {
-  margin: 0;
-  padding: 8px 20px;
-  border-bottom: var(--rule-width) solid var(--danger-border);
-  background: var(--danger-bg);
-  color: var(--danger);
-  font-size: 12px;
-  text-align: center;
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-hair);
 }
 
-.loading-title { margin-bottom: 8px; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOPBAR — Glass Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* NOTE: .topbar-left, .topbar-right, .topbar-title are defined in index.css.
+   Do NOT redefine them here — workspace.css loads after index.css and would override. */
+
+.topbar-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--glass);
+  border: 1px solid var(--border-hair);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms var(--ease-mech);
+}
+
+.topbar-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--glass);
+  border: 1px solid var(--border-hair);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms var(--ease-mech);
+}
+
+.topbar-btn:hover {
+  background: var(--glass-hi);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.topbar-btn--primary {
+  background: var(--grad-accent);
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
+
+.topbar-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GRAPH ZONE — Canvas Area
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* NOTE: .graph-zone and .graph-canvas are defined in index.css with the correct
+   layout rules (min-width: 0, height: 100vh, padding-top for topbar). Do NOT
+   redefine them here as workspace.css loads after index.css and would override. */
+
+/* Graph legend */
+.graph-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 15;
+  display: flex;
+  gap: 16px;
+  padding: 12px 18px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-block-sm);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-dot--user { background: var(--node-user); }
+.legend-dot--skill { background: var(--node-skill); }
+.legend-dot--gap { background: var(--node-gap); }
+.legend-dot--company { background: var(--node-company); }
+.legend-dot--hackathon { background: var(--node-hackathon); }
+
+/* Graph controls */
+.graph-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.graph-control-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 200ms var(--ease-mech);
+  box-shadow: var(--shadow-block-sm);
+}
+
+.graph-control-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PANEL TABS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.panel-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--glass-strong);
+  border-bottom: 1px solid var(--border-hair);
+}
+
+.panel-tab {
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms var(--ease-mech);
+}
+
+.panel-tab:hover {
+  background: var(--glass);
+  color: var(--ink);
+}
+
+.panel-tab.is-active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BUTTONS — Global Button Styles
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms var(--ease-mech);
+  text-decoration: none;
+}
+
+.btn--primary {
+  background: var(--grad-accent);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
+
+.btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
+}
+
+.btn--secondary {
+  background: var(--glass);
+  border: 1px solid var(--border-hair);
+  color: var(--ink-2);
+}
+
+.btn--secondary:hover {
+  background: var(--glass-hi);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.btn--ghost:hover {
+  background: var(--glass);
+  color: var(--ink);
+}
+
+.btn--sm { padding: 8px 14px; font-size: 12px; }
+.btn--lg { padding: 14px 28px; font-size: 16px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FORM INPUTS — Modern Styling
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-surface0);
+  border: 1px solid var(--border-hair);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+
+.input::placeholder { color: var(--ink-4); }
+
+.input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-bg);
+}
+
+.input--error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-bg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODAL — Glass Overlay
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  background: var(--bg-mantle);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-hair);
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--ink-3);
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.modal-close:hover {
+  background: var(--glass);
+  color: var(--ink);
+}
+
+.modal-content {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-hair);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOOLTIP
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tooltip {
+  position: absolute;
+  z-index: 1100;
+  padding: 8px 14px;
+  background: var(--ink);
+  color: var(--bg-base);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  box-shadow: var(--shadow-panel);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BADGES & PILLS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.badge--accent { background: var(--accent-bg); color: var(--accent); }
+.badge--blue { background: var(--blue-bg); color: var(--blue); }
+.badge--moss { background: var(--moss-bg); color: var(--moss); }
+.badge--ochre { background: var(--ochre-bg); color: var(--ochre); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ink-4);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-3);
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    RESPONSIVE
-   Below 1100px the panel overlays instead of adding a column; below 860px the
-   sidebar becomes the slide-in overlay and the breadcrumb keeps its own row.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-@media (max-width: 900px) {
-  .focus-lane {
-    top: auto;
-    bottom: 74px;
-    transform: none;
-    font-size: 9px;
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 260px;
   }
-  .focus-lane--left  { left: 10px; }
-  .focus-lane--right { right: 10px; }
+}
 
-  .crumb-btn { max-width: 120px; }
-  .crumb-note { display: none; }
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    z-index: 100;
+    width: 280px;
+    transition: left 300ms var(--ease-mech);
+  }
+
+  .sidebar.is-open {
+    left: 0;
+    box-shadow: var(--shadow-panel);
+  }
 }

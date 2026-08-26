@@ -2,8 +2,6 @@ import { useRef, useState } from 'react'
 import axios from '../lib/api.js'
 import DevRadarLogo from './DevRadarLogo.jsx'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3003'
-
 // ── Data ─────────────────────────────────────────────────────────────────────
 
 const SKILL_CATEGORIES = [
@@ -559,7 +557,7 @@ export default function OnboardingWizard({ onComplete, waking = false, onGoHome 
     }
 
     try {
-      const { data } = await axios.post(`${API}/api/user/init`, {
+      const { data } = await axios.post('/api/user/init', {
         name:             name.trim() || 'Developer',
         experience,
         stack:            knowWell,
@@ -575,7 +573,7 @@ export default function OnboardingWizard({ onComplete, waking = false, onGoHome 
       await tickStep(2, 400)
       await tickStep(3, 300)
 
-      localStorage.setItem('devradar_userId', data.userId)
+      localStorage.setItem('grafted_userId', data.userId)
 
       onComplete({
         userId:         data.userId,
