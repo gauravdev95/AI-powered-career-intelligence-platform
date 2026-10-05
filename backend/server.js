@@ -310,7 +310,7 @@ function checkAdminToken(req, res) {
   return true
 }
 
-app.post('/api/admin/import-job-history', asyncHandler(async (req, res) => {
+app.all('/api/admin/import-job-history/start', asyncHandler(async (req, res) => {
   if (!checkAdminToken(req, res)) return
   if (importJobState.status === 'running') return res.status(409).json({ error: 'already running' })
   importJobState.status = 'running'
