@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import api from './lib/api.js'
+import api, { aiRequest } from './lib/api.js'
 import { buildGraph } from './lib/graph.js'
 import ChatInterface from './components/ChatInterface.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
@@ -104,8 +104,6 @@ export default function App() {
   // whole array is the breadcrumb. It is the single source of truth for "where
   // am I", which is what keeps the canvas, breadcrumb and sidebar in step.
   const [focusPath, setFocusPath] = useState(['user'])
-  const dashboardRevealedRef = useRef(false)
-
   const focusId = focusPath[focusPath.length - 1]
 
   // Render cold-start: poll backend health until it responds
@@ -229,8 +227,20 @@ export default function App() {
     }
   }, [userId])
 
+  // Retry the dashboard data load after a failure (cold backend, timeout).
+  // Never bounces back to onboarding — the profile is already saved.
+  const handleRetryGraph = useCallback(async () => {
+    if (!userId) return
+    setError(null)
+    try {
+      const { data } = await api.get(`/api/user/${userId}`)
+      await loadGraphData(userId, data.stack ?? userStack, data.experience ?? 'beginner')
+    } catch {
+      // loadGraphData sets the error banner itself on failure
+    }
+  }, [userId, userStack])
+
   async function loadGraphData(uid, stack, experience) {
-    dashboardRevealedRef.current = false
     setLoading(true)
     setLoadingStep(0)
     setError(null)
@@ -240,23 +250,22 @@ export default function App() {
 
     try {
       setLoadingStep(1)
-      const { data: analyzeData } = await api.post('/api/analyze', { userId: uid, stack, experience })
+      const { data: analyzeData } = await api.post('/api/analyze', { userId: uid, stack, experience }, aiRequest())
       const fetchedStartups = analyzeData.startups ?? []
       setStartups(fetchedStartups)
-      dashboardRevealedRef.current = true
-
       setLoadingStep(2)
-      const { data: hackData } = await api.get(`/api/hackathons/${uid}?stack=${encodeURIComponent(stack.join(','))}`)
+      const { data: hackData } = await api.get(`/api/hackathons/${uid}?stack=${encodeURIComponent(stack.join(','))}`, aiRequest())
       setHackathons(hackData.ranked_hackathons ?? [])
 
       setLoadingStep(3)
       const topCompanies = fetchedStartups.slice(0, 5).map(s => s.name)
-      const { data: gapData } = await api.post('/api/gaps', { userId: uid, stack, targetCompanies: topCompanies })
+      const { data: gapData } = await api.post('/api/gaps', { userId: uid, stack, targetCompanies: topCompanies }, aiRequest())
       setGapReport(gapData)
     } catch (err) {
+      // Stay on the dashboard and show the error banner (with retry) — never
+      // bounce the user back to onboarding step 1 after they completed it.
       const kind = classifyError(err)
       setError(ERROR_MESSAGES[kind])
-      if (!dashboardRevealedRef.current) setAppState('onboarding')
     } finally {
       setLoading(false)
     }
@@ -374,7 +383,14 @@ export default function App() {
           </p>
         </div>
       )}
-      {error && <p className="app-error" role="alert">{error}</p>}
+      {error && (
+        <p className="app-error" role="alert">
+          {error}{' '}
+          <button type="button" className="app-error-retry" onClick={handleRetryGraph}>
+            Try again
+          </button>
+        </p>
+      )}
     </div>
   )
 

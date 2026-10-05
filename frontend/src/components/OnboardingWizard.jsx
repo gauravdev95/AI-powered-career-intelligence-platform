@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import axios from '../lib/api.js'
+import axios, { aiRequest } from '../lib/api.js'
 import DevRadarLogo from './DevRadarLogo.jsx'
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -567,12 +567,13 @@ export default function OnboardingWizard({ onComplete, waking = false, onGoHome 
         target_companies: targetCompanies,
         timeline,
       }
-      const { data } = await axios.post('/api/user/init', profilePayload)
+      // 90s budget: profile creation runs embedding batches, slow on cold backends.
+      const { data } = await axios.post('/api/user/init', profilePayload, aiRequest())
 
       if (data.message === 'Career memory restored') {
         // The session already owned a user (fresh signup, or a re-onboarding):
         // init did not touch the profile, so apply the wizard answers now.
-        await axios.put(`/api/user/${data.userId}/profile`, profilePayload)
+        await axios.put(`/api/user/${data.userId}/profile`, profilePayload, aiRequest())
       }
 
       await tickStep(0, 300)
