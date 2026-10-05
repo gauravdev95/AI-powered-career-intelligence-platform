@@ -91,7 +91,7 @@
   --node-gap:       #f97316;
   --node-company:   #a855f7;
   --node-hackathon: #10b981;
-  --node-edge:      rgba(255, 255, 255, 0.18);
+  --node-edge:      rgba(255, 255, 255, 0.38);
 
   /* ── Gradients ────────────────────────────────────────────────────────── */
   --grad-primary:   linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -188,6 +188,14 @@
     --shadow-press:   0 1px 4px rgba(0, 0, 0, 0.04);
     --shadow-card:    0 8px 24px rgba(0, 0, 0, 0.1);
     --shadow-panel:   0 12px 40px rgba(0, 0, 0, 0.12);
+
+    /* Graph palette — dark-ink variants so nodes and edges stay visible */
+    --node-user:      #e11d48;
+    --node-skill:     #0284c7;
+    --node-gap:       #ea580c;
+    --node-company:   #7c3aed;
+    --node-hackathon: #059669;
+    --node-edge:      rgba(15, 23, 42, 0.4);
   }
 }
 

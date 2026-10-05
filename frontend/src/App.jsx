@@ -76,6 +76,56 @@ function MobileTabs({ active, onChange }) {
   )
 }
 
+/**
+ * Collapsed avatar button that opens a small account dropdown menu.
+ * Stays out of the way until clicked — no more overlapping the filter bar.
+ */
+function AccountMenu({ user, onLogout, onUpgrade, shifted }) {
+  const [open, setOpen] = useState(false)
+  const label = user ? (user.name || user.email) : 'Guest'
+  const initial = (label.trim()[0] || '?').toUpperCase()
+
+  useEffect(() => {
+    if (!open) return undefined
+    const close = () => setOpen(false)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [open])
+
+  return (
+    <div className={`account-menu${shifted ? ' account-menu--shifted' : ''}`} role="region" aria-label="Account">
+      <button
+        type="button"
+        className="account-avatar"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title={label}
+        onClick={e => { e.stopPropagation(); setOpen(o => !o) }}
+      >
+        {initial}
+      </button>
+      {open && (
+        <div className="account-dropdown" role="menu" onClick={e => e.stopPropagation()}>
+          <p className="account-dropdown-name">{label}</p>
+          {user?.email && <p className="account-dropdown-email">{user.email}</p>}
+          {!user && (
+            <p className="account-dropdown-hint">Guest — memory lives in this browser</p>
+          )}
+          {user ? (
+            <button type="button" className="account-dropdown-btn" onClick={() => { setOpen(false); onLogout() }}>
+              Log out
+            </button>
+          ) : (
+            <button type="button" className="account-dropdown-btn accent" onClick={() => { setOpen(false); onUpgrade() }}>
+              Create account
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function App() {
   const [user, setUser] = useState(null) // { userId, name, email, hasPassword } | null
   const [userId, setUserId] = useState(null)
@@ -408,31 +458,19 @@ export default function App() {
     rightPanel,
     wikiPageCount,
     onGoHome: handleGoHome,
+    userName: user ? (user.name || user.email) : 'Guest',
   }
 
   return (
     <div className="app-shell">
       {banners}
       {appState === 'app' && (
-        <div className="account-chip" role="region" aria-label="Account">
-          {user ? (
-            <>
-              <span className="account-chip-name" title={user.email}>
-                {user.name || user.email}
-              </span>
-              <button type="button" className="account-chip-btn" onClick={handleLogout}>
-                Log out
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="account-chip-name">Guest — memory lives in this browser</span>
-              <button type="button" className="account-chip-btn accent" onClick={handleUpgrade}>
-                Create account
-              </button>
-            </>
-          )}
-        </div>
+        <AccountMenu
+          user={user}
+          onLogout={handleLogout}
+          onUpgrade={handleUpgrade}
+          shifted={hasRightPanel}
+        />
       )}
       <div className={`graph-layout ${hasRightPanel ? 'panel-open' : ''}`}>
         <Sidebar

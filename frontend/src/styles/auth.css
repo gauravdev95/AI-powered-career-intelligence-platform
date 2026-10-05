@@ -178,8 +178,100 @@
   text-align: center;
 }
 
-/* ── In-app account chip ──────────────────────────────────────────────────── */
+/* ── In-app account menu (collapsed avatar + dropdown) ───────────────────── */
 
+.account-menu {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 60;
+  transition: right 0.25s ease;
+}
+
+/* When the right detail panel is open, sit left of it instead of over it. */
+.account-menu--shifted {
+  right: calc(var(--panel-width, 320px) + 14px);
+}
+
+.account-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.18s ease;
+}
+.account-avatar:hover {
+  transform: scale(1.06);
+  background: var(--glass-strong);
+}
+
+.account-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--bg-surface0, #1e1e42);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.account-dropdown-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-dropdown-email,
+.account-dropdown-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-dropdown-btn {
+  margin-top: 4px;
+  padding: 9px 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.account-dropdown-btn:hover {
+  background: var(--glass-strong);
+}
+.account-dropdown-btn.accent {
+  border: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+  color: #fff;
+}
+
+/* Legacy chip styles kept for reference; the menu above replaces the inline chip. */
 .account-chip {
   position: fixed;
   top: 14px;

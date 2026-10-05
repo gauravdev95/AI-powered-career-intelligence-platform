@@ -34,7 +34,7 @@ function daysUntil(date) {
  * A labelled meter. `label` says what is measured, `value`/`max`/`unit` say how
  * much of it there is, and `note` carries the plain-language reading.
  */
-function Meter({ label, value, max = 100, unit = '%', tone = 'accent', note }) {
+function Meter({ label, value, max = 100, unit = '%', maxUnit, tone = 'accent', note }) {
   const pct = Math.round(clamp01(max ? value / max : 0) * 100)
   return (
     <div className="meter">
@@ -42,7 +42,7 @@ function Meter({ label, value, max = 100, unit = '%', tone = 'accent', note }) {
         <span className="meter-label">{label}</span>
         <span className="meter-value">
           {value}{unit}
-          <span className="meter-max"> / {max}{unit}</span>
+          <span className="meter-max"> / {max}{maxUnit ?? unit}</span>
         </span>
       </div>
       <div
@@ -168,9 +168,12 @@ function SkillKnownContent({ node, startups, hackathons, onFocusNode }) {
           label="Demand across your matches"
           value={demand}
           max={Math.max(1, totalOrgs)}
-          unit=" orgs"
+          unit={demand === 1 ? ' org' : ' orgs'}
+          maxUnit={totalOrgs === 1 ? ' org' : ' orgs'}
           tone="blue"
-          note={`${companies.length} companies and ${events.length} hackathons ask for ${skill}`}
+          note={companies.length || events.length
+            ? `${companies.length} ${companies.length === 1 ? 'company' : 'companies'} and ${events.length} ${events.length === 1 ? 'hackathon' : 'hackathons'} ask for ${skill}`
+            : `No matches ask for ${skill} yet — run an analysis or ingest companies to see demand`}
         />
       </div>
 
@@ -242,7 +245,8 @@ function SkillGapContent({ node, userId, userStack, onLearned }) {
               label="Asked for by"
               value={gap.demand ?? 0}
               max={Math.max(1, gap.demand ?? 1)}
-              unit=" orgs"
+              unit={(gap.demand ?? 0) === 1 ? ' org' : ' orgs'}
+              maxUnit={(gap.demand ?? 1) === 1 ? ' org' : ' orgs'}
               tone="ochre"
               note="Not in your ranked gap list — it came from a company or event requirement"
             />

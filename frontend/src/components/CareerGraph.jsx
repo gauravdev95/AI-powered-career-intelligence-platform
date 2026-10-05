@@ -73,9 +73,9 @@ function buildOptions() {
     edges: {
       // Straight plotted runs, not curves.
       smooth: false,
-      color: { color: edge, highlight: accent, hover: accent, opacity: 0.7 },
-      width: 1,
-      selectionWidth: 0,
+      color: { color: edge, highlight: accent, hover: accent, opacity: 0.85 },
+      width: 2,
+      selectionWidth: 2,
     },
     interaction: {
       hover: true,
@@ -111,12 +111,14 @@ function nodeStyle(node, { isFocus }) {
       hover: { background: isFocus && !isUser ? bgSurf : base, border: accent },
     },
     font: {
-      color: isUser ? bgBase : text,
+      // Labels sit on the canvas background (below the square), so they must
+      // contrast with the canvas — never with the node fill.
+      color: text,
       size: isFocus ? 15 : 13,
       face: 'IBM Plex Mono',
       strokeWidth: 4,
       strokeColor: bgBase,
-      bold: { color: isUser ? bgBase : text, size: isFocus ? 15 : 13, face: 'IBM Plex Mono', mod: 'bold' },
+      bold: { color: text, size: isFocus ? 15 : 13, face: 'IBM Plex Mono', mod: 'bold' },
     },
     shadow: isFocus
       ? { enabled: true, color: accent, size: 0, x: 4, y: 4 }

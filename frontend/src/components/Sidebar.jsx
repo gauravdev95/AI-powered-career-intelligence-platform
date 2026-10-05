@@ -66,6 +66,7 @@ export default function Sidebar({
   onSetRightPanel,
   wikiPageCount,
   onGoHome,
+  userName,
 }) {
   const [tab, setTab] = useState('graph')
   const [query, setQuery] = useState('')
@@ -87,6 +88,10 @@ export default function Sidebar({
   }, [graph.nodeDetails, query, listFilter])
 
   const get = id => graph.nodeMap.get(id)
+
+  const displayName = userName || 'Your Profile'
+  const profileInitial = (displayName.trim()[0] || 'Y').toUpperCase()
+  const stackLine = knownSkills.slice(0, 4).join(' · ') || 'No stack yet'
 
   return (
     <aside className="sidebar">
@@ -140,13 +145,21 @@ export default function Sidebar({
         ) : (
           <>
             <Section title="Profile" count={knownSkills.length + gapSkills.length}>
-              <Row
-                detail={get('user')}
-                focusId={focusId}
-                onFocusNode={onFocusNode}
-                mark={<Icon name="user" />}
-              />
-              <li className="nav-note">{knownSkills.slice(0, 3).join(' · ') || 'No stack yet'}</li>
+              <li>
+                <button
+                  type="button"
+                  className={`profile-card ${focusId === 'user' ? 'is-current' : ''}`}
+                  onClick={() => onFocusNode('user')}
+                  title="Open your profile"
+                  aria-current={focusId === 'user' ? 'true' : undefined}
+                >
+                  <span className="profile-avatar" aria-hidden="true">{profileInitial}</span>
+                  <span className="profile-meta">
+                    <span className="profile-name">{displayName}</span>
+                    <span className="profile-stack">{stackLine}</span>
+                  </span>
+                </button>
+              </li>
             </Section>
 
             <Section title="Skills you have" count={knownSkills.length}>
@@ -202,7 +215,9 @@ export default function Sidebar({
       </div>
 
       {onSetRightPanel && (
-        <div className="sidebar-actions">
+        <div className="sidebar-tools">
+          <p className="sidebar-tools-title">Tools</p>
+          <div className="sidebar-actions">
           <button
             className={`sidebar-action-btn ${rightPanel === 'ingest' ? 'active' : ''}`}
             type="button"
@@ -264,6 +279,7 @@ export default function Sidebar({
             <span className="sidebar-item-text">Wiki</span>
             {(wikiPageCount ?? 0) > 0 && <span className="count-badge blue">{wikiPageCount}</span>}
           </button>
+          </div>
         </div>
       )}
 

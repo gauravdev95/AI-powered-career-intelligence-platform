@@ -242,7 +242,7 @@ export function buildGraph({
       icon: 'skill',
       mobileView: 'gaps',
       // Sidebar score column: how many orgs ask for it.
-      meta: { value: demand, unit: 'org', tone: demand > 0 ? 'blue' : 'muted' },
+      meta: { value: demand, unit: demand === 1 ? ' org' : ' orgs', tone: demand > 0 ? 'blue' : 'muted' },
       sort: demand,
       raw: { skill, demand, totalOrgs: requirementSets.length },
     })
