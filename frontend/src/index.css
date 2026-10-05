@@ -3,6 +3,7 @@
 @import './styles/panels.css';
 @import './styles/nav-and-art.css';
 @import './styles/workspace.css';
+@import './styles/auth.css';
 
 @tailwind base;
 @tailwind components;

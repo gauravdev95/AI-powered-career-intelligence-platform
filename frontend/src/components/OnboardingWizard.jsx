@@ -557,7 +557,7 @@ export default function OnboardingWizard({ onComplete, waking = false, onGoHome 
     }
 
     try {
-      const { data } = await axios.post('/api/user/init', {
+      const profilePayload = {
         name:             name.trim() || 'Developer',
         experience,
         stack:            knowWell,
@@ -566,14 +566,19 @@ export default function OnboardingWizard({ onComplete, waking = false, onGoHome 
         target_role:      targetRole,
         target_companies: targetCompanies,
         timeline,
-      })
+      }
+      const { data } = await axios.post('/api/user/init', profilePayload)
+
+      if (data.message === 'Career memory restored') {
+        // The session already owned a user (fresh signup, or a re-onboarding):
+        // init did not touch the profile, so apply the wizard answers now.
+        await axios.put(`/api/user/${data.userId}/profile`, profilePayload)
+      }
 
       await tickStep(0, 300)
       await tickStep(1, 400)
       await tickStep(2, 400)
       await tickStep(3, 300)
-
-      localStorage.setItem('grafted_userId', data.userId)
 
       onComplete({
         userId:         data.userId,

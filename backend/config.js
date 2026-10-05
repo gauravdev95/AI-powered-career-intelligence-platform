@@ -143,6 +143,20 @@ export const config = {
     // Escape hatch for local development against localhost fixtures. Never enable in prod.
     allowPrivateNetwork: bool('INGEST_ALLOW_PRIVATE_NETWORK', false) && !IS_PRODUCTION,
   },
+
+  auth: {
+    // Signs session cookies. REQUIRED in production — sessions are the entire
+    // auth story, so a missing secret is a boot error there. In dev/test an
+    // ephemeral secret is generated per boot (with a warning); sessions simply
+    // do not survive restarts.
+    sessionSecret: str('SESSION_SECRET', ''),
+    sessionName: str('SESSION_NAME', 'grafted.sid'),
+    sessionMaxAgeMs: num('SESSION_MAX_AGE_MS', 30 * 24 * 3600 * 1000),
+    bcryptRounds: num('BCRYPT_ROUNDS', 12),
+    // Login/signup abuse budget, per IP per window.
+    rateLimitWindowMs: num('AUTH_RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000),
+    rateLimitMax: num('AUTH_RATE_LIMIT_MAX', 30),
+  },
 }
 
 /**
@@ -166,6 +180,12 @@ export function validateConfig() {
   }
   if (!config.redis.enabled) {
     warnings.push('Redis is not configured — using an in-process cache. Set REDIS_URL to share cache across instances.')
+  }
+  if (config.isProduction && !config.auth.sessionSecret) {
+    throw new Error('SESSION_SECRET is required in production — it signs the session cookies that protect every user route.')
+  }
+  if (!config.auth.sessionSecret) {
+    warnings.push('SESSION_SECRET is not set — using an ephemeral secret. Sessions will not survive a restart; set SESSION_SECRET for persistent logins.')
   }
   const weightSum = Object.values(config.memory.rankingWeights).reduce((a, b) => a + b, 0)
   if (weightSum <= 0) {

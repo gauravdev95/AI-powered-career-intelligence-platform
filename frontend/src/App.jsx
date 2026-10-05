@@ -8,6 +8,7 @@ import IngestPanel from './components/IngestPanel.jsx'
 import JourneyView from './components/JourneyView.jsx'
 import WikiPanel from './components/WikiPanel.jsx'
 import LandingPage from './components/LandingPage.jsx'
+import AuthScreen from './components/AuthScreen.jsx'
 import MemoryBadge from './components/MemoryBadge.jsx'
 import OnboardingWizard from './components/OnboardingWizard.jsx'
 import ReturningScreen from './components/ReturningScreen.jsx'
@@ -76,9 +77,10 @@ function MobileTabs({ active, onChange }) {
 }
 
 export default function App() {
+  const [user, setUser] = useState(null) // { userId, name, email, hasPassword } | null
   const [userId, setUserId] = useState(null)
   const [userStack, setUserStack] = useState([])
-  // appState: 'checking' | 'landing' | 'onboarding' | 'returning' | 'app'
+  // appState: 'checking' | 'auth' | 'landing' | 'onboarding' | 'returning' | 'app'
   const [appState, setAppState] = useState('checking')
   const [waking, setWaking] = useState(true)
   const [startups, setStartups] = useState([])
@@ -96,6 +98,8 @@ export default function App() {
   const [learnedSkills, setLearnedSkills] = useState([])
   const [rightPanel, setRightPanel] = useState(null) // 'ingest' | 'chat' | 'roadmap' | null
   const [wikiPageCount, setWikiPageCount] = useState(0)
+  const [authMode, setAuthMode] = useState('login') // which tab the gate opens on
+  const returnToAppRef = useRef(false) // guest upgraded mid-session → back to app
   // The focus trail. Its last entry is the node the canvas is centred on; the
   // whole array is the breadcrumb. It is the single source of truth for "where
   // am I", which is what keeps the canvas, breadcrumb and sidebar in step.
@@ -110,22 +114,30 @@ export default function App() {
     fetch(url).then(() => setWaking(false)).catch(() => setWaking(false))
   }, [])
 
-  // On mount: check for existing user → route to correct screen
+  // A 401 from any non-auth endpoint means the session died mid-app:
+  // clear local state and drop back to the sign-in gate (no redirect loop —
+  // the gate itself owns the /api/auth/* 401s).
   useEffect(() => {
-    // Support old and new localStorage keys during migration
-    const savedId = localStorage.getItem('grafted_userId')
-      || localStorage.getItem('devradar_userId')
-      || localStorage.getItem('devradar_user_id')
-    if (!savedId) {
-      setAppState('landing')
-      return
+    const drop = () => {
+      setUser(null)
+      setUserId(null)
+      setUserStack([])
+      setReturnContext(null)
+      setAuthMode('login')
+      setAppState('auth')
     }
-    // Migrate old keys → new key and clean up
-    localStorage.setItem('grafted_userId', savedId)
-    localStorage.removeItem('devradar_userId')
-    localStorage.removeItem('devradar_user_id')
-    setUserId(savedId)
-    api.get(`/api/return-context/${savedId}`)
+    window.addEventListener('grafted:unauthorized', drop)
+    return () => window.removeEventListener('grafted:unauthorized', drop)
+  }, [])
+
+  // On mount: the session cookie tells us who is signed in — no localStorage id.
+  useEffect(() => {
+    api.get('/api/auth/me')
+      .then(({ data }) => {
+        setUser(data.user)
+        setUserId(data.user.userId)
+        return api.get(`/api/return-context/${data.user.userId}`)
+      })
       .then(({ data }) => {
         if (data.hasHistory) {
           setReturnContext(data)
@@ -135,12 +147,58 @@ export default function App() {
         }
       })
       .catch(() => {
-        setAppState('app')
+        // 401 → nobody signed in yet; anything else → still show the gate,
+        // the auth screen will surface the connection error on submit.
+        setAppState('auth')
       })
   }, [])
 
   // Logo click — go home from anywhere in the app
   const handleGoHome = useCallback(() => setAppState('landing'), [])
+
+  // Called by AuthScreen after login / signup succeeds
+  const handleAuthed = useCallback(async (authedUser) => {
+    setUser(authedUser)
+    setUserId(authedUser.userId)
+    if (returnToAppRef.current) {
+      // Guest upgraded mid-session: memories are intact, go straight back in.
+      returnToAppRef.current = false
+      setAppState('app')
+      return
+    }
+    try {
+      const { data } = await api.get(`/api/return-context/${authedUser.userId}`)
+      if (data.hasHistory) {
+        setReturnContext(data)
+        setAppState('returning')
+      } else {
+        setAppState('onboarding') // fresh account — build the career profile first
+      }
+    } catch {
+      setAppState('onboarding')
+    }
+  }, [])
+
+  // Guest path: explore without an account; signing up later keeps everything
+  const handleGuest = useCallback(() => setAppState('landing'), [])
+
+  // Guest upgrades to a full account without leaving the app.
+  // The backend upgrades the same guest user in place — memories are kept.
+  const handleUpgrade = useCallback(() => {
+    returnToAppRef.current = true
+    setAuthMode('signup')
+    setAppState('auth')
+  }, [])
+
+  // Sign out: destroy the server session, then show the gate again
+  const handleLogout = useCallback(async () => {
+    try { await api.post('/api/auth/logout') } catch { /* already gone */ }
+    setUser(null)
+    setUserId(null)
+    setUserStack([])
+    setReturnContext(null)
+    setAppState('auth')
+  }, [])
 
   // Called by OnboardingWizard after user/init succeeds
   const handleOnboardComplete = useCallback(async ({ userId: newUserId, stack, experience }) => {
@@ -259,6 +317,16 @@ export default function App() {
     return <LoadingScreen step={0} />
   }
 
+  if (appState === 'auth') {
+    return (
+      <AuthScreen
+        initialMode={authMode}
+        onAuthed={handleAuthed}
+        onGuest={handleGuest}
+      />
+    )
+  }
+
   if (appState === 'landing') {
     return (
       <LandingPage
@@ -316,6 +384,27 @@ export default function App() {
   return (
     <div className="app-shell">
       {banners}
+      {appState === 'app' && (
+        <div className="account-chip" role="region" aria-label="Account">
+          {user ? (
+            <>
+              <span className="account-chip-name" title={user.email}>
+                {user.name || user.email}
+              </span>
+              <button type="button" className="account-chip-btn" onClick={handleLogout}>
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="account-chip-name">Guest — memory lives in this browser</span>
+              <button type="button" className="account-chip-btn accent" onClick={handleUpgrade}>
+                Create account
+              </button>
+            </>
+          )}
+        </div>
+      )}
       <div className={`graph-layout ${hasRightPanel ? 'panel-open' : ''}`}>
         <Sidebar
           {...sidebarProps}

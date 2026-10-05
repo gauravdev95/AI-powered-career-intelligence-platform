@@ -89,14 +89,16 @@ export function rowToMemory(row) {
 
 export async function createUser(userId, profile = {}) {
   const row = await queryOne(
-    `INSERT INTO users (user_id, name, experience, target_role, timeline, learning_style)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO users (user_id, name, experience, target_role, timeline, learning_style, email, password_hash)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      ON CONFLICT (user_id) DO UPDATE
        SET name           = EXCLUDED.name,
            experience     = EXCLUDED.experience,
            target_role    = EXCLUDED.target_role,
            timeline       = EXCLUDED.timeline,
            learning_style = EXCLUDED.learning_style,
+           email          = COALESCE(EXCLUDED.email, users.email),
+           password_hash  = COALESCE(EXCLUDED.password_hash, users.password_hash),
            updated_at     = now()
      RETURNING *`,
     [
@@ -106,9 +108,31 @@ export async function createUser(userId, profile = {}) {
       profile.targetRole ?? '',
       profile.timeline ?? '',
       profile.learningStyle ?? '',
+      profile.email ?? null,
+      profile.passwordHash ?? null,
     ],
   )
   return row
+}
+
+/** Case-insensitive lookup — emails are stored lowercased. */
+export async function findUserByEmail(email) {
+  if (!email) return null
+  return queryOne('SELECT * FROM users WHERE email = $1', [email])
+}
+
+/**
+ * Attaches (or replaces) credentials on an existing user. Used when a guest
+ * upgrades to an account via signup, and for password changes.
+ */
+export async function setUserCredentials(userId, { email, passwordHash }) {
+  return queryOne(
+    `UPDATE users
+       SET email = $2, password_hash = $3, updated_at = now()
+     WHERE user_id = $1
+     RETURNING *`,
+    [userId, email ?? null, passwordHash ?? null],
+  )
 }
 
 export async function getUserRow(userId) {
@@ -442,6 +466,7 @@ export async function neighbours(userId, id, { limit = 25 } = {}) {
 export default {
   contentHash, rowToMemory,
   createUser, getUserRow, userExists, touchUserVisit, updateUserProfile, deleteUser,
+  findUserByEmail, setUserCredentials,
   insert, update, supersede, markConflicted, setStatus, remove, touch,
   getById, findByDedupKey, findByHash, list, countByType, vectorSearch, keywordSearch,
   relate, listRelations, neighbours,

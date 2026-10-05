@@ -37,6 +37,7 @@ PostgreSQL database together, so `DATABASE_URL` is wired automatically.
    | `DATABASE_SSL` | `true` |
    | `CORS_ORIGIN` | your frontend URL |
    | `GEMINI_API_KEY` | your key (optional) |
+   | `SESSION_SECRET` | **required** — long random string; the backend refuses to boot in production without it |
    | `GEMINI_MODEL` | `gemini-3-flash-preview` |
    | `EMBEDDING_DIMENSIONS` | `768` |
    | `REDIS_URL` | optional |

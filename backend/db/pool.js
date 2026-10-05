@@ -43,6 +43,8 @@ async function createPgDriver() {
 
   return {
     name: 'pg',
+    // Exposed so the session store can share this pool instead of opening its own.
+    pool,
     async query(text, params = []) {
       return normalise(await pool.query(text, params))
     },

@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS users (
   last_visit_at  TIMESTAMPTZ
 );
 
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique_idx ON users (email);
+
 -- ── Memories ────────────────────────────────────────────────────────────────
 -- One row = one durable fact about one user. `dedup_key` is a stable natural key
 -- (e.g. 'skill:react') used for upsert-style conflict resolution; NULL means the

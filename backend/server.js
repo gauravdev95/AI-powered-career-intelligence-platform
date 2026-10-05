@@ -5,29 +5,33 @@
  * call one engine method, and shape the response — no persistence, embedding, or
  * model logic lives here.
  *
- * Authorisation model: Grafted has no login. A userId is a server-minted UUIDv4
- * (122 bits of entropy) held in the client's localStorage and used as a bearer
- * capability. Every route resolves that id against PostgreSQL and every query is
- * scoped to it, so one user can never read another's memory — but anyone holding
- * the id has full access to that profile. Introducing accounts is the documented
- * upgrade path; see ARCHITECTURE.md.
+ * Authorisation model: session-based accounts. Signup/login issue an httpOnly
+ * session cookie (PostgreSQL-backed in production, in-memory for local dev);
+ * every route that touches user memory requires the session's user to own the
+ * requested userId, so a leaked id alone grants nothing. Anonymous onboarding
+ * still works — /api/user/init mints a guest user and binds it to the session,
+ * and signup later upgrades that guest into a full account.
  */
 
 import express from 'express'
 import cors from 'cors'
+import session from 'express-session'
+import connectPgSimple from 'connect-pg-simple'
 import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
+import { randomBytes } from 'crypto'
 
 import config, { validateConfig } from './config.js'
 import { migrate } from './db/migrate.js'
-import { healthCheck as dbHealthCheck, driverName, close as closeDb } from './db/pool.js'
+import { healthCheck as dbHealthCheck, driverName, getDriver, close as closeDb } from './db/pool.js'
 import { cacheName, closeCache } from './services/cache.js'
 import * as aiService from './services/aiService.js'
 import engine, { MemoryExtractor } from './memory/index.js'
 import * as matching from './matching.js'
 import { detectInputType, fetchURL, extractText } from './fetcher.js'
-import { ApiError, asyncHandler, badRequest, notFound, unprocessable, redact } from './lib/errors.js'
+import { ApiError, asyncHandler, badRequest, conflict, forbidden, notFound, unauthorized, unprocessable, redact } from './lib/errors.js'
+import { hashPassword, verifyPassword, requireEmail, requirePassword } from './lib/auth.js'
 import { mapSettledWithConcurrency } from './lib/concurrency.js'
 import {
   requireUserId, requireString, requireNonEmptyArray,
@@ -140,6 +144,14 @@ const aiLimiter = createRateLimiter({
   name: 'AI',
 })
 
+// Signup/login get their own budget so credential-stuffing cannot hide inside
+// the global allowance.
+const authLimiter = createRateLimiter({
+  windowMs: config.auth.rateLimitWindowMs,
+  limit: config.auth.rateLimitMax,
+  name: 'Auth',
+})
+
 app.set('trust proxy', 1)
 app.disable('x-powered-by')
 app.use(securityHeaders)
@@ -150,23 +162,83 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
-  credentials: false,
+  // The frontend lives on a different origin (e.g. a static Render service)
+  // while the API sets an httpOnly session cookie — credentialed CORS is what
+  // lets the browser send that cookie back on every API call.
+  credentials: true,
   maxAge: 86400,
 }))
 app.use(express.json({ limit: config.http.maxBodySize }))
 app.use(globalLimiter)
 app.use(requestLogger)
 
+// ── Sessions ────────────────────────────────────────────────────────────────
+// Production (pg driver) persists sessions in PostgreSQL via connect-pg-simple
+// so logins survive restarts and work across instances. Local dev and tests run
+// on pglite, where the in-process MemoryStore is fine.
+
+let sessionSecret = config.auth.sessionSecret
+if (!sessionSecret) {
+  // validateConfig() already throws in production without one; this path is
+  // dev/test only, where an ephemeral secret simply means sessions die on restart.
+  sessionSecret = randomBytes(32).toString('hex')
+  console.warn('[auth] SESSION_SECRET is not set — generated an ephemeral secret. Set SESSION_SECRET for persistent logins.')
+}
+
+let sessionStore
+let sessionStoreName = 'memory'
+const dbDriver = await getDriver()
+if (dbDriver?.pool) {
+  const PgSessionStore = connectPgSimple(session)
+  sessionStore = new PgSessionStore({ pool: dbDriver.pool, createTableIfMissing: true })
+  sessionStoreName = 'postgres'
+}
+
+app.use(session({
+  store: sessionStore, // undefined → express-session's MemoryStore
+  name: config.auth.sessionName,
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  proxy: true, // trust Render's reverse proxy for Secure cookies
+  cookie: {
+    httpOnly: true,
+    // Cross-origin frontend (static site → API service) needs SameSite=None in
+    // production; same-host dev can use Lax.
+    sameSite: config.isProduction ? 'none' : 'lax',
+    secure: config.isProduction,
+    maxAge: config.auth.sessionMaxAgeMs,
+  },
+}))
+
 /**
- * Resolves and authorises the caller. Every route that touches user memory uses this,
- * so an unknown or malformed id is rejected before any query runs.
+ * Resolves and authorises the caller.
+ *
+ * Every route that touches user memory goes through this: the request must
+ * carry a live session, and the session's user must own the requested userId.
+ * A userId on its own is no longer sufficient — a leaked id grants nothing.
  */
-async function requireUser(rawUserId) {
+async function requireSessionUser(req, rawUserId) {
   const userId = requireUserId(rawUserId)
+  const sessionUserId = req.session?.userId
+  if (!sessionUserId) {
+    throw unauthorized('Not signed in. Log in to access your career memory.', 'NOT_SIGNED_IN')
+  }
+  if (sessionUserId !== userId) {
+    throw forbidden('You can only access your own career memory.', 'NOT_OWNER')
+  }
   if (!await engine.userExists(userId)) {
+    // The session references a user that no longer exists (e.g. after a DB reset).
     throw notFound('User not found. Complete onboarding to create your career memory.')
   }
   return userId
+}
+
+/** Regenerate the session id on privilege change (login/signup) against fixation. */
+function regenerateSession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.regenerate(err => (err ? reject(err) : resolve()))
+  })
 }
 
 // ── Health ──────────────────────────────────────────────────────────────────
@@ -182,6 +254,7 @@ app.get('/api/health', asyncHandler(async (_req, res) => {
     database: { connected: database, driver, persistent: driver === 'pg' },
     cache,
     ai: { provider: ai.provider, model: ai.model, available: ai.available, embeddingModel: ai.embeddingModel },
+    auth: { sessions: sessionStoreName },
     datasets: { startups: startups.length, hackathons: hackathons.length, skills: skills.length },
   })
 }))
@@ -189,6 +262,14 @@ app.get('/api/health', asyncHandler(async (_req, res) => {
 // ── Onboarding and profile ──────────────────────────────────────────────────
 
 app.post('/api/user/init', asyncHandler(async (req, res) => {
+  // Idempotent: a session that already owns a live user keeps it instead of
+  // minting a duplicate on every revisit.
+  const existingId = req.session?.userId
+  if (existingId && await engine.userExists(existingId)) {
+    const profile = await engine.getProfile(existingId)
+    return res.status(200).json({ userId: profile.userId, message: 'Career memory restored', user: profile })
+  }
+
   const stack = requireNonEmptyArray(req.body.stack, 'stack')
   const experience = requireString(req.body.experience, 'experience', 80)
 
@@ -204,16 +285,92 @@ app.post('/api/user/init', asyncHandler(async (req, res) => {
     learningStyle: sanitizeString(req.body.learning_style, 80),
   })
 
+  // Guest or account — either way the session now owns this user.
+  req.session.userId = profile.userId
   res.status(201).json({ userId: profile.userId, message: 'Career memory created', user: profile })
 }))
 
+// ── Auth ────────────────────────────────────────────────────────────────────
+// Session-based accounts. Signup attaches credentials to the session's guest
+// user when there is one (guest → account upgrade); otherwise it mints a fresh
+// user. Login swaps the session to the account's user.
+
+app.post('/api/auth/signup', authLimiter, asyncHandler(async (req, res) => {
+  const email = requireEmail(req.body.email)
+  const password = requirePassword(req.body.password)
+  const name = sanitizeString(req.body.name, 120) || 'Developer'
+
+  const taken = await engine.findUserByEmail(email)
+  if (taken) {
+    throw conflict('An account with this email already exists. Log in instead.', 'EMAIL_TAKEN')
+  }
+
+  const passwordHash = await hashPassword(password)
+  const sessionUserId = req.session?.userId
+  let profile
+
+  if (sessionUserId && await engine.userExists(sessionUserId)) {
+    const current = await engine.getProfile(sessionUserId)
+    if (current.email) {
+      throw conflict('This session is already signed in. Log out first to create another account.', 'ALREADY_SIGNED_IN')
+    }
+    // Guest → account: keep every memory, just add credentials.
+    await engine.setUserCredentials(sessionUserId, { email, passwordHash })
+    await engine.recordJourney(sessionUserId, 'profile_update', {
+      title: 'Account created',
+      description: email,
+    })
+    profile = await engine.getProfile(sessionUserId)
+  } else {
+    profile = await engine.initUser({ name, email, passwordHash, stack: [] })
+  }
+
+  await regenerateSession(req)
+  req.session.userId = profile.userId
+  res.status(201).json({ userId: profile.userId, message: 'Account created', user: profile })
+}))
+
+app.post('/api/auth/login', authLimiter, asyncHandler(async (req, res) => {
+  const email = requireEmail(req.body.email)
+  const password = typeof req.body.password === 'string' ? req.body.password : ''
+
+  // Same message for unknown email and wrong password: no user enumeration.
+  const row = await engine.findUserByEmail(email)
+  const ok = await verifyPassword(password, row?.password_hash)
+  if (!row || !ok) {
+    throw unauthorized('Incorrect email or password.', 'INVALID_CREDENTIALS')
+  }
+
+  await regenerateSession(req)
+  req.session.userId = row.user_id
+  const profile = await engine.getProfile(row.user_id)
+  res.json({ userId: profile.userId, message: 'Signed in', user: profile })
+}))
+
+app.post('/api/auth/logout', asyncHandler(async (req, res) => {
+  const name = config.auth.sessionName
+  await new Promise((resolve, reject) => {
+    req.session.destroy(err => (err ? reject(err) : resolve()))
+  })
+  res.clearCookie(name)
+  res.json({ ok: true, message: 'Signed out' })
+}))
+
+app.get('/api/auth/me', asyncHandler(async (req, res) => {
+  const sessionUserId = req.session?.userId
+  if (!sessionUserId || !await engine.userExists(sessionUserId)) {
+    throw unauthorized('Not signed in.', 'NOT_SIGNED_IN')
+  }
+  res.json({ user: await engine.getProfile(sessionUserId) })
+}))
+
 app.get('/api/user/:userId', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   res.json(await engine.getProfile(userId))
 }))
 
 app.post('/api/user/:userId/stack', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   const stack = requireNonEmptyArray(req.body.stack, 'stack')
 
   await engine.updateStack(userId, stack)
@@ -226,10 +383,41 @@ app.post('/api/user/:userId/stack', asyncHandler(async (req, res) => {
   res.json({ updated: true, stack })
 }))
 
+/**
+ * PUT /api/user/:userId/profile — apply onboarding answers to an existing user.
+ *
+ * The wizard calls POST /api/user/init first (creates a guest or restores the
+ * session's user); when the user already existed — a fresh signup going through
+ * onboarding, or a re-onboarding — it follows up here so the answers are saved
+ * instead of silently dropped. Ownership is enforced: only the session's own
+ * user may be updated.
+ */
+app.put('/api/user/:userId/profile', authLimiter, asyncHandler(async (req, res) => {
+  const userId = await requireSessionUser(req, req.params.userId)
+
+  const name = sanitizeString(req.body.name, 120) || 'Developer'
+  const stack = requireNonEmptyArray(req.body.stack, 'stack')
+  const experience = requireString(req.body.experience, 'experience', 80)
+
+  const profile = await engine.applyOnboardingProfile(userId, {
+    name,
+    stack,
+    experience,
+    targetRole: sanitizeString(req.body.target_role, 120),
+    timeline: sanitizeString(req.body.timeline, 80),
+    learningStyle: sanitizeString(req.body.learning_style, 80),
+    learningStack: sanitizeStringArray(req.body.learning_stack),
+    goals: sanitizeStringArray(req.body.goals, 10, 120),
+    targetCompanies: sanitizeStringArray(req.body.target_companies, 5, 120),
+  })
+
+  res.json({ updated: true, profile })
+}))
+
 // ── Matching (deterministic, dataset-driven) ────────────────────────────────
 
 app.post('/api/analyze', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.body.userId)
+  const userId = await requireSessionUser(req, req.body.userId)
   const profile = await engine.getProfile(userId)
 
   const requested = sanitizeStringArray(req.body.stack)
@@ -250,7 +438,7 @@ app.post('/api/analyze', asyncHandler(async (req, res) => {
 }))
 
 app.post('/api/gaps', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.body.userId)
+  const userId = await requireSessionUser(req, req.body.userId)
   const profile = await engine.getProfile(userId)
   const stack = sanitizeStringArray(req.body.stack).length ? sanitizeStringArray(req.body.stack) : profile.stack
   if (!stack.length) throw badRequest('stack must be a non-empty array')
@@ -267,7 +455,7 @@ app.post('/api/gaps', asyncHandler(async (req, res) => {
 }))
 
 app.get('/api/hackathons/:userId', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   const queryStack = sanitizeString(req.query.stack, 1000).split(',').map(item => item.trim()).filter(Boolean)
   const stack = queryStack.length ? queryStack : (await engine.getProfile(userId)).stack
 
@@ -284,19 +472,14 @@ app.get('/api/skills', (_req, res) => {
 // ── Return context ──────────────────────────────────────────────────────────
 
 app.get('/api/return-context/:userId', asyncHandler(async (req, res) => {
-  // Deliberately not requireUser: an unknown id means "no history", not an error —
-  // the client sends whatever is in localStorage, which may predate a database reset.
-  const userId = requireUserId(req.params.userId)
-  if (!await engine.userExists(userId)) {
-    return res.json({ hasHistory: false, message: '', urgentItems: [] })
-  }
+  const userId = await requireSessionUser(req, req.params.userId)
   return res.json(await engine.getReturnContext(userId, startups, hackathons))
 }))
 
 // ── Ingest → wiki ───────────────────────────────────────────────────────────
 
 app.post('/api/ingest', aiLimiter, asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.body.userId)
+  const userId = await requireSessionUser(req, req.body.userId)
   const input = requireString(req.body.input, 'input', config.ingest.maxInputChars)
 
   const inputType = detectInputType(input)
@@ -381,13 +564,13 @@ app.post('/api/ingest', aiLimiter, asyncHandler(async (req, res) => {
 }))
 
 app.get('/api/wiki-pages/:userId', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   const pages = await engine.getWikiPages(userId)
   res.json({ pages, total: pages.length })
 }))
 
 app.get('/api/wiki/:userId/:pageType/:pageName', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   const page = await engine.getWikiPage(userId, req.params.pageType, req.params.pageName)
   if (!page) throw notFound('Page not found')
   res.json(page)
@@ -396,7 +579,7 @@ app.get('/api/wiki/:userId/:pageType/:pageName', asyncHandler(async (req, res) =
 // ── Chat (semantic RAG over memory) ─────────────────────────────────────────
 
 app.post('/api/chat', aiLimiter, asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.body.userId)
+  const userId = await requireSessionUser(req, req.body.userId)
   const question = requireString(req.body.question, 'question', 1000)
 
   const requested = sanitizeStringArray(req.body.userStack)
@@ -414,7 +597,7 @@ app.post('/api/chat', aiLimiter, asyncHandler(async (req, res) => {
 // ── Roadmap ─────────────────────────────────────────────────────────────────
 
 app.get('/api/roadmap/:userId', aiLimiter, asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   const roadmap = await engine.generateRoadmap(userId)
   if (!roadmap) throw notFound('User not found')
   res.json(roadmap)
@@ -423,7 +606,7 @@ app.get('/api/roadmap/:userId', aiLimiter, asyncHandler(async (req, res) => {
 // ── Journey ─────────────────────────────────────────────────────────────────
 
 app.get('/api/journey/:userId', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   const limit = parseLimit(req.query.limit, 200, 500)
   res.json({ journey: await engine.getJourney(userId, { limit }) })
 }))
@@ -431,19 +614,19 @@ app.get('/api/journey/:userId', asyncHandler(async (req, res) => {
 // ── Knowledge graph ─────────────────────────────────────────────────────────
 
 app.get('/api/graph-data/:userId', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   res.json(await engine.getGraphData(userId))
 }))
 
 // ── Memory diagnostics ──────────────────────────────────────────────────────
 
 app.get('/api/memory/:userId/stats', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   res.json(await engine.getStats(userId))
 }))
 
 app.post('/api/memory/:userId/search', asyncHandler(async (req, res) => {
-  const userId = await requireUser(req.params.userId)
+  const userId = await requireSessionUser(req, req.params.userId)
   const question = requireString(req.body.query, 'query', 500)
   const topK = parseLimit(req.body.topK, 10, 50)
 

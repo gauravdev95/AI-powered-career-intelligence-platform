@@ -29,11 +29,11 @@
 }
 
 .lp .nav--solid {
-  background: rgba(246, 243, 236, 0.86);
-  backdrop-filter: saturate(180%) blur(14px);
-  -webkit-backdrop-filter: saturate(180%) blur(14px);
-  border-bottom-color: rgba(20, 22, 26, 0.08);
-  box-shadow: 0 1px 20px rgba(20, 22, 26, 0.05);
+  background: rgba(15, 12, 41, 0.82);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border-bottom-color: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   padding-top: 10px;
   padding-bottom: 10px;
 }
@@ -153,8 +153,8 @@
   transition: background 240ms var(--ease-out), color 240ms var(--ease-out);
 }
 .lp .nav-secondary:hover { background: rgba(255, 255, 255, 0.28); }
-.lp .nav--solid .nav-secondary { background: rgba(20, 22, 26, 0.06); color: var(--ink); }
-.lp .nav--solid .nav-secondary:hover { background: rgba(20, 22, 26, 0.11); }
+.lp .nav--solid .nav-secondary { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.lp .nav--solid .nav-secondary:hover { background: rgba(255, 255, 255, 0.22); }
 
 /* ── Burger ──────────────────────────────────────────────────────────────── */
 
@@ -171,7 +171,7 @@
   background: rgba(255, 255, 255, 0.16);
   cursor: pointer;
 }
-.lp .nav--solid .nav-burger { background: rgba(20, 22, 26, 0.06); }
+.lp .nav--solid .nav-burger { background: rgba(255, 255, 255, 0.12); }
 
 .lp .nav-burger span {
   display: block;

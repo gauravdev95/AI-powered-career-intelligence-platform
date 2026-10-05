@@ -258,13 +258,25 @@ Applied on the initial request **and re-applied on every redirect hop**:
 8. Connections are pinned to the exact validated address, closing the DNS-rebinding
    window between validation and connection.
 
-### Authorisation model — a known limitation
+### Authorisation model
 
-Grafted has no login. A `userId` is a server-minted UUIDv4 held in `localStorage` and
-used as a **bearer capability**. Every route resolves it against PostgreSQL and every
-query is scoped to it, so one user can never read another's memory — but anyone who
-obtains the id has full access to that profile. Real accounts are the documented
-upgrade path; the memory layer needs no change, since it is already user-scoped.
+Grafted uses **session-based authentication**. Accounts are email + bcrypt-hashed
+password (12 rounds); sessions live in PostgreSQL via `connect-pg-simple` in
+production (in-memory store under PGlite for dev/test) and ride on an `httpOnly`
+cookie (`secure`, `SameSite=None` in production; `Lax` in dev). CORS is
+credentialed and the session id is regenerated at login/signup to defeat fixation.
+
+Every user-data route enforces **ownership**: the session must exist (401) and the
+requested `userId` must equal the session's `userId` (403). A bare UUID grants
+nothing. Login failures return a single generic message so accounts cannot be
+enumerated, and the auth endpoints carry their own rate limiter.
+
+Guests still onboard without an account: `POST /api/user/init` binds the new guest
+to the session and is idempotent for that session. Signing up upgrades the same
+guest user in place — memories survive — and logging in on another device switches
+the session to the account. A fresh signup lands in the onboarding wizard, whose
+answers are saved via `PUT /api/user/:id/profile` (the memory layer itself needed
+no change; it was already user-scoped).
 
 ---
 

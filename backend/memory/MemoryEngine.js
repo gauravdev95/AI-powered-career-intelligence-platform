@@ -46,6 +46,8 @@ export async function initUser(profile) {
     targetRole: profile.targetRole,
     timeline: profile.timeline,
     learningStyle: profile.learningStyle,
+    email: profile.email ?? null,
+    passwordHash: profile.passwordHash ?? null,
   })
 
   const candidates = extractor.fromOnboarding({ ...profile, userId })
@@ -66,9 +68,53 @@ export async function initUser(profile) {
   return getProfile(userId)
 }
 
+/**
+ * Applies onboarding answers to an EXISTING user (fresh signup, or a returning
+ * user re-running onboarding). initUser() covers the guest path; this covers
+ * everyone whose account already exists, so their wizard answers are not lost.
+ *
+ * Scalar fields are patched on the user row; list-shaped fields go through the
+ * same extraction + dedup pipeline as onboarding, so re-running the wizard
+ * reinforces rather than duplicates memories.
+ */
+export async function applyOnboardingProfile(userId, profile) {
+  await store.updateUserProfile(userId, {
+    name: profile.name,
+    experience: profile.experience,
+    targetRole: profile.targetRole,
+    timeline: profile.timeline,
+    learningStyle: profile.learningStyle,
+  })
+
+  const candidates = extractor.fromOnboarding({ ...profile, userId })
+  const written = await rememberMany(userId, candidates)
+
+  const profileMemory = written.find(memory => memory?.type === MEMORY_TYPES.PROFILE)
+  if (profileMemory) {
+    await graph.linkToProfile(userId, written.filter(Boolean), profileMemory.id)
+  }
+
+  await recordJourney(userId, JOURNEY_TYPES.PROFILE_UPDATE, {
+    title: 'Profile updated',
+    description: `${profile.stack?.length ?? 0} skills, ${profile.goals?.length ?? 0} goals recorded`,
+  })
+
+  return getProfile(userId)
+}
+
 /** True when this user exists in PostgreSQL. */
 export async function userExists(userId) {
   return store.userExists(userId)
+}
+
+/** Email lookup for login. Returns the raw row (including password_hash) — callers must never serialise it. */
+export async function findUserByEmail(email) {
+  return store.findUserByEmail(email)
+}
+
+/** Attaches or replaces credentials on an existing user (guest → account upgrade). */
+export async function setUserCredentials(userId, credentials) {
+  return store.setUserCredentials(userId, credentials)
 }
 
 /**
@@ -148,6 +194,8 @@ export async function getProfile(userId) {
   return {
     userId: row.user_id,
     name: row.name,
+    email: row.email ?? null,
+    hasPassword: Boolean(row.password_hash),
     experience: row.experience,
     target_role: row.target_role,
     timeline: row.timeline,
@@ -809,7 +857,8 @@ export async function getGraphData(userId) {
 }
 
 export default {
-  initUser, userExists, getProfile, updateStack,
+  initUser, userExists, getProfile, updateStack, applyOnboardingProfile,
+  findUserByEmail, setUserCredentials,
   remember, rememberMany, recall, answer,
   saveWikiPage, getWikiPages, getWikiPage, countWikiPages, chunkMarkdown,
   recordJourney, getJourney, recordEntityView, saveGapAnalysis,

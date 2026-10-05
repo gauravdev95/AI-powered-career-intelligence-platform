@@ -5,6 +5,7 @@ const DEFAULT_API_URL = 'https://ai-powered-career-intelligence-platform-9bdm.on
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || DEFAULT_API_URL,
   timeout: Number(import.meta.env.VITE_API_TIMEOUT_MS) || 30000,
+  withCredentials: true, // auth rides on the httpOnly session cookie — never on JS state
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,6 +28,13 @@ export const aiRequest = (extra = {}) => ({ timeout: AI_TIMEOUT_MS, ...extra })
 api.interceptors.response.use(
   response => response,
   error => {
+    // A 401 outside the auth endpoints means the session died mid-app
+    // (expired, or destroyed elsewhere). Tell the app to drop back to the
+    // sign-in gate. Auth endpoints 401 legitimately — the gate handles those.
+    if (error.response?.status === 401 && !error.config?.url?.startsWith('/api/auth/')) {
+      window.dispatchEvent(new CustomEvent('grafted:unauthorized'))
+    }
+
     const message = error.response?.data?.error
       || error.response?.data?.message
       || (error.code === 'ECONNABORTED' ? 'Request timed out. Please try again.' : error.message)

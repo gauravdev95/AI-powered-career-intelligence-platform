@@ -10,7 +10,9 @@ export class ApiError extends Error {
 }
 
 export const badRequest = (message, code = 'VALIDATION_ERROR') => new ApiError(400, message, code)
+export const unauthorized = (message, code = 'UNAUTHORIZED') => new ApiError(401, message, code)
 export const forbidden = (message, code = 'FORBIDDEN') => new ApiError(403, message, code)
+export const conflict = (message, code = 'CONFLICT') => new ApiError(409, message, code)
 export const notFound = (message, code = 'NOT_FOUND') => new ApiError(404, message, code)
 export const unprocessable = (message, code = 'UNPROCESSABLE') => new ApiError(422, message, code)
 export const upstream = (message, code = 'UPSTREAM_ERROR') => new ApiError(502, message, code)
