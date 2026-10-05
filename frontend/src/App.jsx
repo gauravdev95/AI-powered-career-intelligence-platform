@@ -147,17 +147,18 @@ export default function App() {
         }
       })
       .catch(() => {
-        // 401 → nobody signed in yet; anything else → still show the gate,
-        // the auth screen will surface the connection error on submit.
-        setAppState('auth')
+        // Nobody signed in yet → show the landing page first; its
+        // "Get started" button leads to the signup/login gate.
+        setAppState('landing')
       })
   }, [])
 
   // Logo click — go home from anywhere in the app
   const handleGoHome = useCallback(() => setAppState('landing'), [])
 
-  // Called by AuthScreen after login / signup succeeds
-  const handleAuthed = useCallback(async (authedUser) => {
+  // Called by AuthScreen after login / signup succeeds.
+  // Signup → 4-step onboarding (fresh profile). Login → straight to the dashboard.
+  const handleAuthed = useCallback(async (authedUser, mode) => {
     setUser(authedUser)
     setUserId(authedUser.userId)
     if (returnToAppRef.current) {
@@ -166,16 +167,21 @@ export default function App() {
       setAppState('app')
       return
     }
+    if (mode === 'signup') {
+      setAppState('onboarding') // brand-new account — build the career profile first
+      return
+    }
+    // Login on an existing account — go straight to the dashboard.
+    setAppState('app')
     try {
-      const { data } = await api.get(`/api/return-context/${authedUser.userId}`)
-      if (data.hasHistory) {
-        setReturnContext(data)
-        setAppState('returning')
-      } else {
-        setAppState('onboarding') // fresh account — build the career profile first
+      const { data } = await api.get(`/api/user/${authedUser.userId}`)
+      const stack = data.stack ?? []
+      setUserStack(stack)
+      if (stack.length > 0) {
+        await loadGraphData(authedUser.userId, stack, data.experience ?? 'beginner')
       }
     } catch {
-      setAppState('onboarding')
+      // Just show the dashboard — the user can ingest data from there.
     }
   }, [])
 
@@ -190,14 +196,14 @@ export default function App() {
     setAppState('auth')
   }, [])
 
-  // Sign out: destroy the server session, then show the gate again
+  // Sign out: destroy the server session, then show the landing page again
   const handleLogout = useCallback(async () => {
     try { await api.post('/api/auth/logout') } catch { /* already gone */ }
     setUser(null)
     setUserId(null)
     setUserStack([])
     setReturnContext(null)
-    setAppState('auth')
+    setAppState('landing')
   }, [])
 
   // Called by OnboardingWizard after user/init succeeds
@@ -331,7 +337,14 @@ export default function App() {
     return (
       <LandingPage
         isReturning={!!userId}
-        onStart={() => setAppState('onboarding')}
+        onStart={() => {
+          if (userId) {
+            setAppState('onboarding') // signed in, "Start fresh" → redo the profile
+          } else {
+            setAuthMode('signup') // fresh visitor, "Get started" → signup/login gate
+            setAppState('auth')
+          }
+        }}
         onContinue={handleReturningContinue}
       />
     )

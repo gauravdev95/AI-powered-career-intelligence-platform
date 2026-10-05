@@ -5,7 +5,7 @@ import api from '../lib/api.js'
  * Grafted sign-in screen. Session cookie is httpOnly — this component never
  * touches it; it only reports the authenticated user upward.
  *
- * Modes: 'login' | 'signup'. onAuthed(user) on success, onGuest() when the
+ * Modes: 'login' | 'signup'. onAuthed(user, mode) on success, onGuest() when the
  * user wants to try the product before creating an account.
  */
 export default function AuthScreen({ onAuthed, onGuest, initialMode = 'login' }) {
@@ -26,7 +26,7 @@ export default function AuthScreen({ onAuthed, onGuest, initialMode = 'login' })
         ? { email, password }
         : { email, password, name: name.trim() || undefined }
       const { data } = await api.post(path, payload)
-      onAuthed(data.user)
+      onAuthed(data.user, mode)
     } catch (err) {
       setError(err.appMessage ?? 'Something went wrong. Please try again.')
     } finally {
