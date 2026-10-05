@@ -190,7 +190,7 @@
 
 /* When the right detail panel is open, sit left of it instead of over it. */
 .account-menu--shifted {
-  right: calc(var(--panel-width, 320px) + 14px);
+  right: calc(var(--panel-width, 320px) + 22px);
 }
 
 .account-avatar {

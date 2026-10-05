@@ -164,17 +164,19 @@ function SkillKnownContent({ node, startups, hackathons, onFocusNode }) {
       </div>
 
       <div className="panel-section">
-        <Meter
-          label="Demand across your matches"
-          value={demand}
-          max={Math.max(1, totalOrgs)}
-          unit={demand === 1 ? ' org' : ' orgs'}
-          maxUnit={totalOrgs === 1 ? ' org' : ' orgs'}
-          tone="blue"
-          note={companies.length || events.length
-            ? `${companies.length} ${companies.length === 1 ? 'company' : 'companies'} and ${events.length} ${events.length === 1 ? 'hackathon' : 'hackathons'} ask for ${skill}`
-            : `No matches ask for ${skill} yet — run an analysis or ingest companies to see demand`}
-        />
+        {totalOrgs > 0 ? (
+          <Meter
+            label="Demand across your matches"
+            value={demand}
+            max={totalOrgs}
+            unit={demand === 1 ? ' org' : ' orgs'}
+            maxUnit={totalOrgs === 1 ? ' org' : ' orgs'}
+            tone="blue"
+            note={`${companies.length} ${companies.length === 1 ? 'company' : 'companies'} and ${events.length} ${events.length === 1 ? 'hackathon' : 'hackathons'} ask for ${skill}`}
+          />
+        ) : (
+          <p className="meter-note meter-note--empty">No matches ask for {skill} yet — run an analysis or ingest companies to see demand.</p>
+        )}
       </div>
 
       <div className="panel-section">
