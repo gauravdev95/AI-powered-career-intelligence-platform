@@ -19,52 +19,67 @@
 .dash::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
 .dash::-webkit-scrollbar-track { background: transparent; }
 
-/* ── Welcome ──────────────────────────────────────────────────────────────── */
+/* ── Hero (reference-style cinematic banner) ────────────────────────────────── */
 
-.dash-welcome {
+.dash-hero {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 14px;
-  min-height: 108px;
+  padding: 10px 20px;
+  height: clamp(100px, 11vw, 150px);
+  flex: 0 0 auto;
 }
-.dash-welcome-title {
+.dash-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+.dash-hero-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(6, 11, 29, 0.88) 0%, rgba(6, 11, 29, 0.5) 32%, transparent 58%),
+    linear-gradient(0deg, rgba(6, 11, 29, 0.35) 0%, transparent 45%);
+  pointer-events: none;
+}
+.dash-hero-main {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+}
+.dash-hero-title {
   margin: 0 0 6px;
   font-family: var(--font-display);
-  font-size: 27px;
+  font-size: clamp(20px, 2.2vw, 28px);
   font-weight: 800;
   letter-spacing: -0.01em;
   color: #fff;
+  white-space: nowrap;
 }
-.dash-welcome-sub {
+.dash-hero-sub {
   margin: 0;
-  font-size: 14px;
+  font-size: clamp(12px, 1.15vw, 14.5px);
   color: #9aa3c7;
+  white-space: nowrap;
 }
-.dash-welcome-quote {
+.dash-hero-quote {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   margin: 0;
   text-align: right;
-  font-size: 14.5px;
+  font-size: clamp(12px, 1.2vw, 15px);
   font-style: italic;
   line-height: 1.5;
-  color: #c7cdea;
+  color: #d5dbf2;
   white-space: nowrap;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
-}
-.dash-welcome-main { position: relative; z-index: 1; }
-.dash-welcome-mountains {
-  position: absolute;
-  top: 0;
-  right: 0;
-  height: 100%;
-  width: 62%;
-  min-width: 420px;
-  pointer-events: none;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.75);
 }
 
 /* ── Stat cards ───────────────────────────────────────────────────────────── */
@@ -521,8 +536,9 @@
 }
 @media (max-width: 640px) {
   .dash { padding: 14px 12px 24px; }
-  .dash-welcome { flex-direction: column; align-items: flex-start; }
-  .dash-welcome-quote { text-align: left; }
+  .dash-hero { flex-direction: column; align-items: flex-start; justify-content: center; height: auto; min-height: 132px; }
+  .dash-hero-quote { text-align: left; }
+  .dash-hero-title, .dash-hero-sub, .dash-hero-quote { white-space: normal; }
   .dash-stats { grid-template-columns: 1fr; }
   .dash-cardhead { flex-direction: column; }
 }

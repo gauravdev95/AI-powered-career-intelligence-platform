@@ -266,64 +266,66 @@ export default function Dashboard({ user, profile, graph, onNavigate, onOpenChat
 
   return (
     <div className="dash">
-      {/* Welcome — simple strip on the page, not a card */}
-      <section className="dash-welcome">
-        <svg className="dash-welcome-mountains" viewBox="0 0 640 170" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
+      {/* Hero — cinematic mountain banner, exactly like the reference */}
+      <section className="dash-hero">
+        <svg className="dash-hero-bg" viewBox="0 0 1520 170" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <defs>
-            <radialGradient id="dash-sunset" cx="70%" cy="82%" r="60%">
-              <stop offset="0%" stopColor="#fdba74" stopOpacity="0.9" />
-              <stop offset="35%" stopColor="#fb923c" stopOpacity="0.5" />
-              <stop offset="65%" stopColor="#ec4899" stopOpacity="0.2" />
+            <linearGradient id="dash-hero-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#070c26" />
+              <stop offset="100%" stopColor="#131a45" />
+            </linearGradient>
+            <radialGradient id="dash-hero-sunset" cx="68%" cy="84%" r="42%">
+              <stop offset="0%" stopColor="#fdba74" stopOpacity="0.95" />
+              <stop offset="35%" stopColor="#fb923c" stopOpacity="0.55" />
+              <stop offset="65%" stopColor="#ec4899" stopOpacity="0.22" />
               <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
             </radialGradient>
-            <linearGradient id="dash-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0a1030" />
-              <stop offset="100%" stopColor="#141b4a" />
-            </linearGradient>
-            <linearGradient id="dash-range-back" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="dash-hero-back" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#3d4682" />
               <stop offset="100%" stopColor="#232a5e" />
             </linearGradient>
-            <linearGradient id="dash-range-front" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="dash-hero-front" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#202858" />
-              <stop offset="100%" stopColor="#0e1434" />
+              <stop offset="100%" stopColor="#0d1330" />
             </linearGradient>
           </defs>
-          <rect x="0" y="0" width="640" height="170" fill="url(#dash-sky)" />
-          <rect x="0" y="0" width="640" height="170" fill="url(#dash-sunset)" />
-          {/* stars */}
+          <rect x="0" y="0" width="1520" height="170" fill="url(#dash-hero-sky)" />
+          <rect x="0" y="0" width="1520" height="170" fill="url(#dash-hero-sunset)" />
           <g fill="#ffffff" opacity="0.8">
-            <circle cx="120" cy="28" r="1.4" />
-            <circle cx="250" cy="18" r="1.1" />
-            <circle cx="380" cy="30" r="1.5" />
-            <circle cx="500" cy="14" r="1.1" />
-            <circle cx="580" cy="38" r="1.3" />
-            <circle cx="60" cy="52" r="1.1" />
-            <circle cx="320" cy="54" r="1.1" />
-            <circle cx="450" cy="52" r="1" />
+            <circle cx="180" cy="26" r="1.4" />
+            <circle cx="380" cy="16" r="1.1" />
+            <circle cx="590" cy="30" r="1.5" />
+            <circle cx="790" cy="14" r="1.1" />
+            <circle cx="980" cy="34" r="1.3" />
+            <circle cx="1210" cy="18" r="1.2" />
+            <circle cx="1400" cy="30" r="1.4" />
+            <circle cx="90" cy="52" r="1.1" />
+            <circle cx="480" cy="54" r="1" />
+            <circle cx="700" cy="50" r="1.1" />
+            <circle cx="1120" cy="52" r="1" />
+            <circle cx="1320" cy="56" r="1.1" />
           </g>
-          {/* back range */}
           <path
-            d="M0 170 L0 112 L70 58 L130 100 L210 36 L290 96 L370 50 L450 104 L530 64 L600 108 L640 90 L640 170 Z"
-            fill="url(#dash-range-back)"
+            d="M0 170 L0 120 L90 70 L160 110 L260 45 L340 105 L470 55 L560 115 L680 60 L780 118 L900 50 L1010 112 L1130 62 L1230 115 L1350 70 L1440 112 L1520 85 L1520 170 Z"
+            fill="url(#dash-hero-back)"
           />
-          {/* snow caps on back range */}
           <g fill="#eef1ff" opacity="0.9">
-            <path d="M210 36 l15 24 -8 -4 -6 8 -7 -9 -9 5 15 -24Z" />
-            <path d="M370 50 l13 20 -7 -3 -5 7 -6 -8 -8 4 13 -20Z" />
-            <path d="M70 58 l11 17 -6 -3 -5 6 -5 -7 -6 4 11 -17Z" />
+            <path d="M260 45 l16 26 -9 -5 -6 9 -8 -10 -9 5 16 -25Z" />
+            <path d="M470 55 l14 22 -8 -4 -6 8 -7 -9 -8 5 14 -22Z" />
+            <path d="M900 50 l15 24 -8 -4 -6 8 -7 -9 -9 5 15 -24Z" />
+            <path d="M1130 62 l12 19 -7 -3 -5 7 -6 -8 -7 4 12 -19Z" />
           </g>
-          {/* front range */}
           <path
-            d="M0 170 L0 134 L90 82 L170 128 L270 76 L370 132 L460 90 L550 130 L640 112 L640 170 Z"
-            fill="url(#dash-range-front)"
+            d="M0 170 L0 140 L120 95 L220 138 L340 88 L460 142 L580 98 L700 140 L830 92 L950 138 L1080 96 L1210 138 L1340 100 L1450 136 L1520 120 L1520 170 Z"
+            fill="url(#dash-hero-front)"
           />
         </svg>
-        <div className="dash-welcome-main">
-          <h1 className="dash-welcome-title">Welcome back, {firstName(user?.name ?? profile?.name)} <span aria-hidden="true">👋</span></h1>
-          <p className="dash-welcome-sub">Your AI-powered career intelligence platform</p>
+        <div className="dash-hero-shade" aria-hidden="true" />
+        <div className="dash-hero-main">
+          <h1 className="dash-hero-title">Welcome back, {firstName(user?.name ?? profile?.name)} <span aria-hidden="true">👋</span></h1>
+          <p className="dash-hero-sub">Your AI-powered career intelligence platform</p>
         </div>
-        <p className="dash-welcome-quote">“A smarter path<br />for your brighter future.”</p>
+        <p className="dash-hero-quote">“A smarter path<br />for your brighter future.”</p>
       </section>
 
       {/* Stat cards */}
