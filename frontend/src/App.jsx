@@ -1,7 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import api, { aiRequest } from './lib/api.js'
 import { buildGraph } from './lib/graph.js'
-import ChatInterface from './components/ChatInterface.jsx'
 import DetailPanel from './components/DetailPanel.jsx'
 import EmptyGraphState from './components/EmptyGraphState.jsx'
 import IngestPanel from './components/IngestPanel.jsx'
@@ -21,6 +20,7 @@ import Dashboard from './components/Dashboard.jsx'
 import { Icon } from './components/icons.jsx'
 
 const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
+const ChatPage = lazy(() => import('./components/ChatPage.jsx'))
 
 /** Deepest focus trail we keep. Older hops fall off the front of the breadcrumb. */
 const MAX_FOCUS_DEPTH = 6
@@ -166,7 +166,7 @@ export default function App() {
   // Logo click — go home from anywhere in the app
   const handleGoHome = useCallback(() => setAppState('landing'), [])
 
-  const PANEL_NAV_IDS = useMemo(() => ['chat', 'roadmap', 'journey', 'ingest', 'wiki'], [])
+  const PANEL_NAV_IDS = useMemo(() => ['roadmap', 'journey', 'ingest', 'wiki'], [])
 
   /** Primary nav: panel ids open their right-side panel over the graph view. */
   const handleNav = useCallback(id => {
@@ -181,11 +181,11 @@ export default function App() {
     }
   }, [PANEL_NAV_IDS])
 
-  /** Top-bar search / AI assistant → open Career Chat, optionally with a question. */
+  /** Top-bar search / AI assistant → open the Career Chat page, optionally with a question. */
   const openChat = useCallback(question => {
-    setNavView('graph')
+    setNavView('chat')
     setSelectedNode(null)
-    setRightPanel('chat')
+    setRightPanel(null)
     if (question) {
       setChatQuery(question)
       setChatNonce(n => n + 1)
@@ -544,25 +544,6 @@ export default function App() {
           </aside>
         )}
 
-        {rightPanel === 'chat' && (
-          <aside className="detail-panel">
-            <div className="panel-header">
-              <div className="panel-title-wrap">
-                <span className="node-type-badge hackathon">AI</span>
-                <span className="panel-title">Career Chat</span>
-              </div>
-              <button className="panel-close" type="button" onClick={() => setRightPanel(null)} aria-label="Close">×</button>
-            </div>
-            <ChatInterface
-              key={chatNonce}
-              userId={userId}
-              userStack={graph.knownSkills}
-              wikiPageCount={wikiPageCount}
-              initialQuery={chatQuery}
-            />
-          </aside>
-        )}
-
         {rightPanel === 'roadmap' && (
           <aside className="detail-panel">
             <div className="panel-header">
@@ -612,6 +593,21 @@ export default function App() {
               onRunAnalysis={handleRetryGraph}
               onSelectGap={handleSelectGap}
             />
+          ) : navView === 'chat' ? (
+            <Suspense fallback={<LoadingScreen step={0} />}>
+              <ChatPage
+                key={chatNonce}
+                user={user}
+                profile={profile}
+                userId={userId}
+                userStack={graph.knownSkills}
+                startups={graph.startups}
+                hackathons={graph.hackathons}
+                gapReport={gapReport}
+                initialQuery={chatQuery}
+                chatKey={chatNonce}
+              />
+            </Suspense>
           ) : (
             <ComingSoon page={navView} onBack={() => setNavView('graph')} />
           )}

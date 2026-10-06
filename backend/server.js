@@ -27,7 +27,7 @@ import { migrate } from './db/migrate.js'
 import { healthCheck as dbHealthCheck, driverName, getDriver, close as closeDb } from './db/pool.js'
 import { cacheName, closeCache } from './services/cache.js'
 import * as aiService from './services/aiService.js'
-import engine, { MemoryExtractor } from './memory/index.js'
+import engine, { MemoryExtractor, MemoryRetriever } from './memory/index.js'
 import * as matching from './matching.js'
 import { detectInputType, fetchURL, extractText } from './fetcher.js'
 import { ApiError, asyncHandler, badRequest, conflict, forbidden, notFound, unauthorized, unprocessable, redact } from './lib/errors.js'
@@ -597,13 +597,50 @@ app.post('/api/chat', aiLimiter, asyncHandler(async (req, res) => {
 
   const requested = sanitizeStringArray(req.body.userStack)
   const userStack = requested.length ? requested : (await engine.getProfile(userId)).stack
+  const useMemory = req.body.memory !== false
+  const webSearch = req.body.webSearch === true
 
-  const result = await engine.answer(userId, question, { userStack })
+  const result = await engine.answer(userId, question, { userStack, useMemory })
   res.json({
     answer: result.answer,
     citations: result.citations,
     grounded: result.grounded,
     degraded: result.degraded,
+    // The product has no web-search provider wired yet: the client shows an
+    // honest note instead of pretending results were searched.
+    webSearchUnsupported: webSearch || undefined,
+  })
+}))
+
+// ── Chat history: recent conversation sessions for the context panel ─────────
+app.get('/api/chat/:userId/recent', asyncHandler(async (req, res) => {
+  const userId = await requireSessionUser(req, req.params.userId)
+  const turns = await MemoryRetriever.recentConversation(userId, 60)
+
+  // Consecutive turns more than 30 minutes apart start a new session.
+  const sessions = []
+  let current = null
+  for (const turn of turns) {
+    const t = new Date(turn.createdAt).getTime()
+    if (!current || t - current.lastT > 30 * 60 * 1000) {
+      current = { turns: [], lastT: t, startedAt: turn.createdAt }
+      sessions.push(current)
+    }
+    current.lastT = t
+    current.turns.push({ role: turn.role, content: turn.content })
+  }
+
+  res.json({
+    sessions: sessions.reverse().slice(0, 10).map((session, index) => {
+      const firstUser = session.turns.find(turn => turn.role === 'user')
+      const title = firstUser ? firstUser.content : 'Conversation'
+      return {
+        id: `session-${index}`,
+        title: title.length > 44 ? `${title.slice(0, 44)}…` : title,
+        startedAt: session.startedAt,
+        turns: session.turns,
+      }
+    }),
   })
 }))
 

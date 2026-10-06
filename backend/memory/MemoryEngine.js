@@ -418,13 +418,13 @@ export async function recall(userId, question, {
  * Short-term memory (recent turns) shapes the reply; long-term memory is written only
  * for durable facts the developer stated about themselves.
  */
-export async function answer(userId, question, { userStack = [] } = {}) {
-  const [recalled, recentTurns] = await Promise.all([
+export async function answer(userId, question, { userStack = [], useMemory = true } = {}) {
+  const [recalled, recentTurns] = useMemory ? await Promise.all([
     recall(userId, question, {
       typeBoosts: inferTypeBoosts(question),
     }),
     retriever.recentConversation(userId),
-  ])
+  ]) : [{ context: '', entries: [], stats: null }, []]
 
   const result = await aiService.answerFromContext({
     question,

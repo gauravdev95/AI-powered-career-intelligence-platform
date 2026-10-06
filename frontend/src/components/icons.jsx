@@ -77,6 +77,10 @@ export function Icon({ name, className = 'sidebar-icon' }) {
       return <svg {...props}><path d="M4 5h16l-6.5 7.5V19l-3 2v-8.5L4 5Z" /></svg>
     case 'chevron':
       return <svg {...props}><path d="m9 6 6 6-6 6" /></svg>
+    case 'attach':
+      return <svg {...props}><path d="m21.4 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+    case 'globe':
+      return <svg {...props}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z" /></svg>
     case 'code':
       return <svg {...props}><path d="m16 18 6-6-6-6M8 6l-6 6 6 6" /></svg>
     default:
