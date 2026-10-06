@@ -223,8 +223,13 @@ export default function IngestPage({ userId, onPagesCreated }) {
                 />
               )}
               {tab === 'screenshot' && (
-                <div
-                  className={`shot-drop ${dragOver ? 'drag-over' : ''}`}
+                <>
+                  <div className="ingest-warn-note">
+                    <Icon name="bulb" />
+                    <p>Screenshot analysis isn&apos;t supported yet — copy the text from the page and paste it in the Paste Text tab instead.</p>
+                  </div>
+                  <div
+                    className={`shot-drop ${dragOver ? 'drag-over' : ''}`}
                   onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files?.[0], true) }}
@@ -235,6 +240,7 @@ export default function IngestPage({ userId, onPagesCreated }) {
                   <span>PNG, JPG, WEBP</span>
                   <input ref={shotRef} type="file" accept="image/*" hidden onChange={e => { handleFile(e.target.files?.[0], true); e.target.value = '' }} />
                 </div>
+              </>
               )}
               {tab === 'file' && (
                 <div className="file-drop" onClick={() => fileRef.current?.click()}>

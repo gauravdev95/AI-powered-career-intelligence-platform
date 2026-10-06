@@ -22,16 +22,16 @@
 
 .ingest-title {
   margin: 0 0 6px;
-  font-size: 27px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: #f4f6ff;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
 }
 
 .ingest-sub {
   margin: 0;
   font-size: 13.5px;
-  color: #8b93b0;
+  color: #a5adcf;
   max-width: 560px;
 }
 
@@ -237,6 +237,20 @@
 }
 
 .ingest-url-input:focus { border-color: rgba(109, 94, 240, 0.6); }
+
+.ingest-warn-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.ingest-warn-note svg { width: 17px; height: 17px; color: #fbbf24; flex: 0 0 auto; margin-top: 1px; }
+.ingest-warn-note p { margin: 0; font-size: 12.5px; line-height: 1.6; color: #e8d5a8; }
 
 .shot-drop, .file-drop {
   border: 1.5px dashed rgba(255, 255, 255, 0.16);
