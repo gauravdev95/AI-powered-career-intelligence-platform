@@ -135,8 +135,8 @@ export function fromOnboarding(profile) {
  * candidates. Returns both the candidates and the raw entity payload, because the
  * ingest endpoint reports entity counts back to the UI.
  */
-export async function fromIngest(content, { userStack = [], inputType = 'text', sourceUrl = '' } = {}) {
-  const entities = await aiService.extractEntities(content, userStack)
+export async function fromIngest(content, { userStack = [], inputType = 'text', sourceUrl = '', apiKey } = {}) {
+  const entities = await aiService.extractEntities(content, userStack, { ...(apiKey ? { apiKey } : null) })
   const source = inputType === 'url' ? MEMORY_SOURCES.INGEST_URL : MEMORY_SOURCES.INGEST_TEXT
   const provenance = sourceUrl ? { sourceUrl } : {}
   const out = []
@@ -227,10 +227,10 @@ const ALLOWED_CONVERSATION_TYPES = new Set([
  * and confidence is capped — a claim made in passing is weaker evidence than the
  * same claim entered in onboarding.
  */
-export async function fromConversation({ question, answer, userStack = [] }) {
-  if (!aiService.isAvailable()) return []
+export async function fromConversation({ question, answer, userStack = [], apiKey }) {
+  if (!aiService.isAvailable(apiKey)) return []
 
-  const extracted = await aiService.extractDurableMemories({ question, answer, userStack })
+  const extracted = await aiService.extractDurableMemories({ question, answer, userStack, ...(apiKey ? { apiKey } : null) })
 
   return extracted
     .filter(item => item?.content && isMemoryType(item.type) && ALLOWED_CONVERSATION_TYPES.has(item.type))

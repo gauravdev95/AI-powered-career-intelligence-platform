@@ -17,6 +17,7 @@ import config from '../config.js'
 import { query, withTransaction, toVectorLiteral } from '../db/pool.js'
 import { embedMany, embedOne, embedQuery } from '../services/embeddings.js'
 import * as aiService from '../services/aiService.js'
+import * as userAiKeys from '../services/userAiKeys.js'
 import { invalidateUser } from '../services/cache.js'
 import { slugify } from '../lib/validate.js'
 import * as store from './MemoryStore.js'
@@ -426,11 +427,16 @@ export async function answer(userId, question, { userStack = [], useMemory = tru
     retriever.recentConversation(userId),
   ]) : [{ context: '', entries: [], stats: null }, []]
 
+  // Bring-your-own key: the user's stored Gemini key (if any) funds this answer.
+  // Resolved once; the provider falls back to the server key when it is absent.
+  const userApiKey = await userAiKeys.getDecryptedAiKey(userId)
+
   const result = await aiService.answerFromContext({
     question,
     context: recalled.context,
     userStack,
     recentTurns,
+    ...(userApiKey ? { apiKey: userApiKey } : null),
   })
 
   const citations = contextBuilder.resolveCitations(result.cited_keys, recalled.entries)
@@ -440,7 +446,7 @@ export async function answer(userId, question, { userStack = [], useMemory = tru
   // Promote durable facts from this exchange. Best-effort: a failure here must not
   // affect the answer the user already has.
   try {
-    const durable = await extractor.fromConversation({ question, answer: result.answer, userStack })
+    const durable = await extractor.fromConversation({ question, answer: result.answer, userStack, ...(userApiKey ? { apiKey: userApiKey } : null) })
     if (durable.length) await rememberMany(userId, durable)
   } catch (err) {
     console.warn('[memory] conversation extraction skipped:', err.message)
@@ -815,11 +821,15 @@ export async function generateRoadmap(userId) {
     recordAccess: false,
   })
 
+  // Bring-your-own key: prefer the user's stored Gemini key for this generation.
+  const userApiKey = await userAiKeys.getDecryptedAiKey(userId)
+
   const roadmap = await aiService.generateRoadmap({
     userStack: profile.stack,
     gapSkills,
     goals: profile.goals,
     context: recalled.context,
+    ...(userApiKey ? { apiKey: userApiKey } : null),
   })
 
   await remember(userId, {

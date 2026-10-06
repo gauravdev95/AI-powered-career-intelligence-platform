@@ -54,8 +54,11 @@ export function parseErrorDetails(rawBody) {
   }
 }
 
-async function callGemini(url, body, { timeoutMs = config.ai.timeoutMs, maxRetries = config.ai.maxRetries } = {}) {
-  if (!config.ai.apiKey) {
+async function callGemini(url, body, { timeoutMs = config.ai.timeoutMs, maxRetries = config.ai.maxRetries, apiKey } = {}) {
+  // Per-user override first, server key as fallback. A caller-supplied key lets a
+  // user run AI features on their own quota when the shared key is exhausted.
+  const key = apiKey || config.ai.apiKey
+  if (!key) {
     throw upstream('AI provider is not configured (GEMINI_API_KEY missing).', 'AI_UNAVAILABLE')
   }
 
@@ -68,7 +71,7 @@ async function callGemini(url, body, { timeoutMs = config.ai.timeoutMs, maxRetri
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': config.ai.apiKey,
+          'x-goog-api-key': key,
         },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(timeoutMs),
@@ -149,8 +152,8 @@ function extractText(payload) {
 
 export const name = 'gemini'
 
-export function isAvailable() {
-  return Boolean(config.ai.apiKey)
+export function isAvailable(apiKey) {
+  return Boolean(apiKey || config.ai.apiKey)
 }
 
 export function modelId() {
@@ -162,7 +165,7 @@ export function modelId() {
  * When `json` is true the model is put in JSON mode and, if a schema is supplied,
  * constrained to it — far more reliable than asking for JSON in the prompt.
  */
-export async function generate({ system, prompt, json = false, schema, maxOutputTokens = 1200, temperature = config.ai.temperature, timeoutMs }) {
+export async function generate({ system, prompt, json = false, schema, maxOutputTokens = 1200, temperature = config.ai.temperature, timeoutMs, apiKey }) {
   const generationConfig = { temperature, maxOutputTokens }
   if (json) {
     generationConfig.responseMimeType = 'application/json'
@@ -175,8 +178,10 @@ export async function generate({ system, prompt, json = false, schema, maxOutput
   }
   if (system) body.systemInstruction = { parts: [{ text: system }] }
 
-  const payload = await callGemini(endpoint(config.ai.model, 'generateContent'), body,
-    timeoutMs ? { timeoutMs } : undefined)
+  const payload = await callGemini(endpoint(config.ai.model, 'generateContent'), body, {
+    ...(timeoutMs ? { timeoutMs } : null),
+    ...(apiKey ? { apiKey } : null),
+  })
   return extractText(payload)
 }
 
@@ -185,7 +190,7 @@ export async function generate({ system, prompt, json = false, schema, maxOutput
  * `taskType` materially affects quality: documents and queries are embedded into
  * the same space but with different optimisation targets.
  */
-export async function embed(texts, { taskType = 'RETRIEVAL_DOCUMENT' } = {}) {
+export async function embed(texts, { taskType = 'RETRIEVAL_DOCUMENT', apiKey } = {}) {
   const inputs = Array.isArray(texts) ? texts : [texts]
   if (inputs.length === 0) return []
 
@@ -201,7 +206,9 @@ export async function embed(texts, { taskType = 'RETRIEVAL_DOCUMENT' } = {}) {
     })),
   }
 
-  const payload = await callGemini(endpoint(model, 'batchEmbedContents'), body)
+  const payload = await callGemini(endpoint(model, 'batchEmbedContents'), body, {
+    ...(apiKey ? { apiKey } : null),
+  })
   const embeddings = payload?.embeddings ?? []
 
   return inputs.map((_, index) => {

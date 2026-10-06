@@ -27,6 +27,7 @@ import { migrate } from './db/migrate.js'
 import { healthCheck as dbHealthCheck, driverName, getDriver, close as closeDb } from './db/pool.js'
 import { cacheName, closeCache } from './services/cache.js'
 import * as aiService from './services/aiService.js'
+import * as userAiKeys from './services/userAiKeys.js'
 import engine, { MemoryExtractor, MemoryRetriever } from './memory/index.js'
 import * as matching from './matching.js'
 import { detectInputType, fetchURL, extractText } from './fetcher.js'
@@ -414,6 +415,33 @@ app.put('/api/user/:userId/profile', authLimiter, asyncHandler(async (req, res) 
   res.json({ updated: true, profile })
 }))
 
+// ── Bring-your-own Gemini API key ───────────────────────────────────────────
+//
+// The shared server key's quota can run out, degrading AI features for everyone.
+// A user with their own Gemini key can store it here; every AI call made on their
+// behalf then prefers their key and falls back to the server key otherwise.
+//
+// Ownership is enforced by requireSessionUser: a user can only manage their OWN
+// key. The raw key is never returned by any endpoint and never logged — only a
+// masked hint (last 4 chars) is ever exposed.
+
+app.put('/api/user/:userId/ai-key', authLimiter, asyncHandler(async (req, res) => {
+  const userId = await requireSessionUser(req, req.params.userId)
+  const { hint } = await userAiKeys.setAiKey(userId, req.body.key)
+  res.json({ configured: true, hint })
+}))
+
+app.get('/api/user/:userId/ai-key', asyncHandler(async (req, res) => {
+  const userId = await requireSessionUser(req, req.params.userId)
+  res.json(await userAiKeys.getAiKeyStatus(userId))
+}))
+
+app.delete('/api/user/:userId/ai-key', asyncHandler(async (req, res) => {
+  const userId = await requireSessionUser(req, req.params.userId)
+  await userAiKeys.clearAiKey(userId)
+  res.json({ configured: false, hint: null })
+}))
+
 // ── Matching (deterministic, dataset-driven) ────────────────────────────────
 
 app.post('/api/analyze', asyncHandler(async (req, res) => {
@@ -515,11 +543,17 @@ app.post('/api/ingest', aiLimiter, asyncHandler(async (req, res) => {
 
   const profile = await engine.getProfile(userId)
 
+  // Bring-your-own key: the user's stored Gemini key (if any) funds this
+  // request's extraction and wiki generation; otherwise the server key is used.
+  const userApiKey = await userAiKeys.getDecryptedAiKey(userId)
+  const aiKeyOpt = userApiKey ? { apiKey: userApiKey } : null
+
   // 1. Extract entities and remember them as durable memories.
   const { candidates, entities } = await MemoryExtractor.fromIngest(content, {
     userStack: profile.stack,
     inputType,
     sourceUrl,
+    ...(aiKeyOpt ?? {}),
   })
 
   await engine.rememberMany(userId, candidates)
@@ -537,7 +571,7 @@ app.post('/api/ingest', aiLimiter, asyncHandler(async (req, res) => {
   // Bounded, not parallel: see lib/concurrency.js — the unbounded version spent the
   // provider's per-minute budget on one paste and 429'd the user's next question.
   const results = await mapSettledWithConcurrency(pageJobs, config.ingest.wikiPageConcurrency, async job => {
-    const markdown = await aiService.generateWikiPage(job.type, job.entity, profile.stack, content)
+    const markdown = await aiService.generateWikiPage(job.type, job.entity, profile.stack, content, aiKeyOpt ?? {})
     await engine.saveWikiPage(userId, job.type, job.name, markdown, {
       source: inputType === 'url' ? sourceUrl : 'pasted text',
       inputType,

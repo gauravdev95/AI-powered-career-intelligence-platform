@@ -22,8 +22,8 @@ function provider() {
   return selected
 }
 
-export function isAvailable() {
-  return provider().isAvailable()
+export function isAvailable(apiKey) {
+  return provider().isAvailable(apiKey)
 }
 
 export function describe() {
@@ -72,9 +72,12 @@ export function parseJson(text, fallback = null) {
  * fallback is a real answer.
  */
 async function tryGenerate(task, options, fallback) {
-  if (!isAvailable()) return { text: fallback, reason: 'unconfigured' }
+  // A per-user key counts as "available" even when the server key is missing or
+  // exhausted — the provider prefers it and falls back to the server key.
+  const { apiKey, ...providerOptions } = options ?? {}
+  if (!isAvailable(apiKey)) return { text: fallback, reason: 'unconfigured' }
   try {
-    return { text: await provider().generate(options), reason: null }
+    return { text: await provider().generate({ ...providerOptions, ...(apiKey ? { apiKey } : null) }), reason: null }
   } catch (err) {
     console.error(`[ai] ${task} failed:`, redact(err.message))
     return {
@@ -94,7 +97,7 @@ async function tryGenerate(task, options, fallback) {
  */
 export async function embed(texts, options = {}) {
   const inputs = Array.isArray(texts) ? texts : [texts]
-  if (!isAvailable() || inputs.length === 0) return inputs.map(() => null)
+  if (!isAvailable(options.apiKey) || inputs.length === 0) return inputs.map(() => null)
   try {
     return await provider().embed(inputs, options)
   } catch (err) {
@@ -163,7 +166,7 @@ const ENTITY_SCHEMA = {
 const EMPTY_ENTITIES = { companies: [], skills: [], hackathons: [], gaps: [], summary: '' }
 
 /** Step 1 of ingest: pull career entities out of raw job/careers-page content. */
-export async function extractEntities(content, userStack = []) {
+export async function extractEntities(content, userStack = [], { apiKey } = {}) {
   const baseOptions = {
     system: 'You extract structured career intelligence for Indian software developers. '
       + 'Only report entities that genuinely appear in the source. Never invent companies, '
@@ -189,10 +192,10 @@ Respond as JSON: {"companies": [{"name": "...", "type": "...", "skills_required"
 
   // First try: strict responseSchema. Some providers/models reject nested
   // schemas — retry once without it rather than silently returning nothing.
-  let { text } = await tryGenerate('extractEntities', { ...baseOptions, schema: ENTITY_SCHEMA }, null)
+  let { text } = await tryGenerate('extractEntities', { ...baseOptions, schema: ENTITY_SCHEMA, ...(apiKey ? { apiKey } : null) }, null)
   let parsed = parseJson(text, null)
   if (!parsed) {
-    const retry = await tryGenerate('extractEntities:plain-json', baseOptions, null)
+    const retry = await tryGenerate('extractEntities:plain-json', { ...baseOptions, ...(apiKey ? { apiKey } : null) }, null)
     parsed = parseJson(retry.text, null)
   }
 
@@ -207,7 +210,7 @@ Respond as JSON: {"companies": [{"name": "...", "type": "...", "skills_required"
 }
 
 /** Step 2 of ingest: render one entity as a markdown wiki page with wikilinks. */
-export async function generateWikiPage(entityType, entity, userStack = [], sourceContent = '') {
+export async function generateWikiPage(entityType, entity, userStack = [], sourceContent = '', { apiKey } = {}) {
   const today = new Date().toISOString().slice(0, 10)
   const title = entity.name ?? entity.skill ?? 'Unknown'
 
@@ -246,6 +249,7 @@ Explain the connection, using [[skill/typescript]] style wikilinks to related pa
 - [ ] one specific, achievable next step`,
     maxOutputTokens: 900,
     temperature: 0.4,
+    ...(apiKey ? { apiKey } : null),
   }, null)
 
   if (markdown?.trim()) return markdown.trim()
@@ -280,7 +284,7 @@ ${details || '- No additional detail was extracted.'}
  * Grounded question answering. `context` is the already-retrieved, already-ranked
  * and already-budgeted memory context — this function never sees the full wiki.
  */
-export async function answerFromContext({ question, context, userStack = [], recentTurns = [] }) {
+export async function answerFromContext({ question, context, userStack = [], recentTurns = [], apiKey }) {
   const fallback = {
     answer: context
       ? 'I found related notes in your wiki but could not reach the AI provider to summarise them. Try again shortly.'
@@ -319,6 +323,7 @@ Respond as JSON: {"answer": "...", "cited_keys": ["<key>", ...]}`,
       required: ['answer'],
     },
     maxOutputTokens: 900,
+    ...(apiKey ? { apiKey } : null),
   }, null)
 
   const parsed = parseJson(text, null)
@@ -339,7 +344,7 @@ Respond as JSON: {"answer": "...", "cited_keys": ["<key>", ...]}`,
 }
 
 /** Generates a four-week learning roadmap grounded in the user's gaps and memory. */
-export async function generateRoadmap({ userStack = [], gapSkills = [], goals = [], context = '' }) {
+export async function generateRoadmap({ userStack = [], gapSkills = [], goals = [], context = '', apiKey }) {
   const primaryGap = gapSkills[0]?.skill ?? gapSkills[0]?.name ?? 'your strongest skill'
 
   const fallback = {
@@ -399,6 +404,7 @@ Produce exactly 4 weeks as JSON:
 {"weeks":[{"week":1,"theme":"","focus_skill":"","tasks":["..."],"resources":[{"title":"","url":"https://...","type":"course|docs|project|article"}],"milestone":""}],"summary":""}`,
     json: true,
     maxOutputTokens: 1800,
+    ...(apiKey ? { apiKey } : null),
   }, null)
 
   const parsed = parseJson(text, null)
@@ -418,7 +424,7 @@ Produce exactly 4 weeks as JSON:
  * Durable-memory extraction: decides which facts from a conversation are worth
  * remembering permanently. Deliberately conservative — most chat is disposable.
  */
-export async function extractDurableMemories({ question, answer, userStack = [] }) {
+export async function extractDurableMemories({ question, answer, userStack = [], apiKey }) {
   const { text } = await tryGenerate('extractDurableMemories', {
     system: 'You decide what is worth remembering about a developer long-term. '
       + 'Extract ONLY durable facts the developer stated about themselves: goals, '
@@ -453,6 +459,7 @@ JSON: {"memories":[{"type":"GOAL|PREFERENCE|TARGET_COMPANY|SKILL|SKILL_GAP","con
     },
     maxOutputTokens: 600,
     temperature: 0.1,
+    ...(apiKey ? { apiKey } : null),
   }, null)
 
   const parsed = parseJson(text, null)
@@ -460,7 +467,7 @@ JSON: {"memories":[{"type":"GOAL|PREFERENCE|TARGET_COMPANY|SKILL|SKILL_GAP","con
 }
 
 /** Compresses text when it would otherwise blow the context budget. */
-export async function summarize(text, { maxWords = 90 } = {}) {
+export async function summarize(text, { maxWords = 90, apiKey } = {}) {
   if (!text || text.length < 400) return text ?? ''
   const { text: result } = await tryGenerate('summarize', {
     system: 'You compress career notes. Preserve concrete facts — company names, skills, '
@@ -468,6 +475,7 @@ export async function summarize(text, { maxWords = 90 } = {}) {
     prompt: `Summarise in at most ${maxWords} words:\n\n${text.slice(0, 6000)}`,
     maxOutputTokens: 300,
     temperature: 0.2,
+    ...(apiKey ? { apiKey } : null),
   }, null)
   return result?.trim() || text.slice(0, maxWords * 8)
 }

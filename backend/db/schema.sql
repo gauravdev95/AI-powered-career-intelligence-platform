@@ -24,6 +24,19 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique_idx ON users (email);
 
+-- ── Bring-your-own AI keys ──────────────────────────────────────────────────
+-- One row per user. The key is stored ENCRYPTED (AES-256-GCM, see
+-- services/userAiKeys.js) — the raw key is never returned by any endpoint and
+-- never logged. Only a masked hint (last 4 chars) is ever exposed.
+
+CREATE TABLE IF NOT EXISTS user_ai_keys (
+  user_id       TEXT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+  key_encrypted TEXT NOT NULL,
+  key_hint      TEXT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- ── Memories ────────────────────────────────────────────────────────────────
 -- One row = one durable fact about one user. `dedup_key` is a stable natural key
 -- (e.g. 'skill:react') used for upsert-style conflict resolution; NULL means the

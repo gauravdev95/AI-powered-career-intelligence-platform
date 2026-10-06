@@ -84,6 +84,12 @@ export default function SettingsPage({ userId, onNavigate }) {
   const [notice, setNotice] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
 
+  // Bring-your-own Gemini API key
+  const [aiKey, setAiKey] = useState('')
+  const [aiKeyStatus, setAiKeyStatus] = useState({ configured: false, hint: null })
+  const [aiKeyBusy, setAiKeyBusy] = useState(false)
+  const [aiKeyMsg, setAiKeyMsg] = useState('')
+
   // Profile form state
   const [name, setName] = useState('')
   const [targetRole, setTargetRole] = useState('')
@@ -130,6 +136,54 @@ export default function SettingsPage({ userId, onNavigate }) {
   const flash = msg => {
     setNotice(msg)
     setTimeout(() => setNotice(''), 3200)
+  }
+
+  // Load the user's Gemini key status (configured + masked hint only — the raw
+  // key is never returned by the API).
+  useEffect(() => {
+    let alive = true
+    async function loadKeyStatus() {
+      if (!userId) return
+      try {
+        const { data } = await axios.get(`${API}/api/user/${userId}/ai-key`)
+        if (alive && data) setAiKeyStatus({ configured: !!data.configured, hint: data.hint ?? null })
+      } catch {
+        /* leave as not configured */
+      }
+    }
+    loadKeyStatus()
+    return () => { alive = false }
+  }, [userId])
+
+  const saveAiKey = async () => {
+    const key = aiKey.trim()
+    if (!key) { setAiKeyMsg('Paste your Gemini API key first.'); return }
+    setAiKeyBusy(true)
+    setAiKeyMsg('')
+    try {
+      const { data } = await axios.put(`${API}/api/user/${userId}/ai-key`, { key })
+      setAiKeyStatus({ configured: true, hint: data.hint ?? null })
+      setAiKey('')
+      setAiKeyMsg('Key saved — AI features will now run on your quota.')
+    } catch (err) {
+      setAiKeyMsg(err.response?.data?.message || 'Could not save the key. Check it and try again.')
+    } finally {
+      setAiKeyBusy(false)
+    }
+  }
+
+  const removeAiKey = async () => {
+    setAiKeyBusy(true)
+    setAiKeyMsg('')
+    try {
+      await axios.delete(`${API}/api/user/${userId}/ai-key`)
+      setAiKeyStatus({ configured: false, hint: null })
+      setAiKeyMsg('Key removed — AI features fall back to the shared key.')
+    } catch {
+      setAiKeyMsg('Could not remove the key. Try again.')
+    } finally {
+      setAiKeyBusy(false)
+    }
   }
 
   const saveProfile = async () => {
@@ -440,6 +494,55 @@ export default function SettingsPage({ userId, onNavigate }) {
                 <div>
                   <h2>Integrations</h2>
                   <p className="set-card-sub">Connect with your accounts</p>
+                </div>
+              </div>
+              <div className="set-aikey-card">
+                <span className="set-aikey-icon"><Icon name="sparkles" /></span>
+                <div className="set-aikey-body">
+                  <div className="set-aikey-head">
+                    <strong>Gemini API Key</strong>
+                    <span className={`set-aikey-status ${aiKeyStatus.configured ? 'is-on' : ''}`}>
+                      {aiKeyStatus.configured ? `Configured ${aiKeyStatus.hint ?? ''}` : 'Not configured'}
+                    </span>
+                  </div>
+                  <p className="set-aikey-desc">
+                    Grafted&apos;s shared AI quota is currently exhausted, so AI features run in a
+                    degraded mode. Add your own Gemini API key and ingest extraction, chat and
+                    roadmaps will run on <em>your</em> quota instead. Get a free key from{' '}
+                    <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Google AI Studio</a>.
+                  </p>
+                  <div className="set-aikey-row">
+                    <input
+                      type="password"
+                      className="set-input set-aikey-input"
+                      placeholder={aiKeyStatus.configured ? 'Enter a new key to replace the current one' : 'Paste your Gemini API key'}
+                      value={aiKey}
+                      onChange={e => setAiKey(e.target.value)}
+                      autoComplete="off"
+                      spellCheck={false}
+                      disabled={aiKeyBusy}
+                    />
+                    <button
+                      type="button"
+                      className="set-btn sm is-primary"
+                      onClick={saveAiKey}
+                      disabled={aiKeyBusy || !aiKey.trim()}
+                    >
+                      {aiKeyBusy ? 'Saving…' : 'Save key'}
+                    </button>
+                    {aiKeyStatus.configured && (
+                      <button
+                        type="button"
+                        className="set-btn sm is-ghost"
+                        onClick={removeAiKey}
+                        disabled={aiKeyBusy}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  {aiKeyMsg && <p className="set-aikey-msg">{aiKeyMsg}</p>}
+                  <p className="set-hint">Your key is stored encrypted with your account and only ever used for your AI requests. It is never displayed again — not even to you.</p>
                 </div>
               </div>
               <div className="set-integrations">

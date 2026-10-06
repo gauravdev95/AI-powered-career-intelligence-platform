@@ -454,6 +454,80 @@ select.set-input option { background: #161d37; }
 
 .set-integration-icon svg { width: 20px; height: 20px; }
 
+/* Bring-your-own Gemini API key card */
+
+.set-aikey-card {
+  display: flex;
+  gap: 14px;
+  background: rgba(109, 78, 242, 0.07);
+  border: 1px solid rgba(139, 124, 255, 0.28);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.set-aikey-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(109, 78, 242, 0.35), rgba(59, 130, 246, 0.25));
+  color: #cdbfff;
+  flex: 0 0 auto;
+}
+
+.set-aikey-icon svg { width: 21px; height: 21px; }
+
+.set-aikey-body { flex: 1; min-width: 0; }
+
+.set-aikey-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.set-aikey-head strong { font-size: 14.5px; color: #f2f4ff; }
+
+.set-aikey-status {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b93b0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 4px 11px;
+  letter-spacing: 0.01em;
+}
+
+.set-aikey-status.is-on {
+  color: #7ef0c1;
+  background: rgba(52, 211, 153, 0.1);
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.set-aikey-desc { font-size: 13px; line-height: 1.65; color: #aeb7d6; margin: 0 0 12px; }
+.set-aikey-desc em { color: #d4dbf2; font-style: normal; font-weight: 600; }
+.set-aikey-desc a { color: #a78bfa; text-decoration: none; font-weight: 600; }
+.set-aikey-desc a:hover { text-decoration: underline; }
+
+.set-aikey-row { display: flex; gap: 10px; align-items: center; }
+.set-aikey-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+
+.set-aikey-msg { font-size: 12.5px; color: #cdbfff; margin: 10px 0 0; }
+
+.set-aikey-card .set-hint { margin-top: 10px; }
+
+@media (max-width: 480px) {
+  .set-aikey-card { flex-direction: column; }
+  .set-aikey-row { flex-wrap: wrap; }
+  .set-aikey-row .set-aikey-input { flex: 1 1 100%; }
+}
+
 /* Billing */
 
 .set-plan-card {
