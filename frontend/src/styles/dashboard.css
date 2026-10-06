@@ -29,6 +29,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 10px 14px;
+  min-height: 108px;
 }
 .dash-welcome-title {
   margin: 0 0 6px;
