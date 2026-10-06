@@ -268,6 +268,49 @@ export default function Dashboard({ user, profile, graph, onNavigate, onOpenChat
     <div className="dash">
       {/* Welcome */}
       <section className="dash-welcome">
+        <svg className="dash-welcome-mountains" viewBox="0 0 640 170" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
+          <defs>
+            <radialGradient id="dash-sunset" cx="68%" cy="88%" r="55%">
+              <stop offset="0%" stopColor="#fb923c" stopOpacity="0.5" />
+              <stop offset="45%" stopColor="#ec4899" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="dash-range-back" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#232c5e" />
+              <stop offset="100%" stopColor="#141b3f" />
+            </linearGradient>
+            <linearGradient id="dash-range-front" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#10173a" />
+              <stop offset="100%" stopColor="#080d22" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="640" height="170" fill="url(#dash-sunset)" />
+          {/* stars */}
+          <g fill="#ffffff" opacity="0.7">
+            <circle cx="120" cy="28" r="1.3" />
+            <circle cx="250" cy="18" r="1" />
+            <circle cx="380" cy="32" r="1.4" />
+            <circle cx="500" cy="16" r="1" />
+            <circle cx="580" cy="40" r="1.2" />
+            <circle cx="60" cy="52" r="1" />
+            <circle cx="320" cy="55" r="1" />
+          </g>
+          {/* back range */}
+          <path
+            d="M0 170 L0 118 L70 66 L130 104 L210 44 L290 100 L370 58 L450 108 L530 72 L600 112 L640 96 L640 170 Z"
+            fill="url(#dash-range-back)"
+          />
+          {/* snow caps on back range */}
+          <g fill="#e8ecff" opacity="0.85">
+            <path d="M210 44 l14 22 -8 -4 -6 8 -7 -9 -8 5 15 -22Z" />
+            <path d="M370 58 l12 18 -7 -3 -5 7 -6 -8 -7 4 13 -18Z" />
+          </g>
+          {/* front range */}
+          <path
+            d="M0 170 L0 138 L90 88 L170 132 L270 82 L370 136 L460 96 L550 134 L640 118 L640 170 Z"
+            fill="url(#dash-range-front)"
+          />
+        </svg>
         <div className="dash-welcome-main">
           <h1 className="dash-welcome-title">Welcome back, {firstName(user?.name ?? profile?.name)} <span aria-hidden="true">👋</span></h1>
           <p className="dash-welcome-sub">Your AI-powered career intelligence platform</p>

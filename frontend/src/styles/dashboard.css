@@ -50,6 +50,8 @@
   color: #9aa3c7;
 }
 .dash-welcome-quote {
+  position: relative;
+  z-index: 1;
   margin: 0;
   text-align: right;
   font-size: 14.5px;
@@ -57,6 +59,17 @@
   line-height: 1.5;
   color: #c7cdea;
   white-space: nowrap;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+.dash-welcome-main { position: relative; z-index: 1; }
+.dash-welcome-mountains {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 62%;
+  min-width: 420px;
+  pointer-events: none;
 }
 
 /* ── Stat cards ───────────────────────────────────────────────────────────── */
