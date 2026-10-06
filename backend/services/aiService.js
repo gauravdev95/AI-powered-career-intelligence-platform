@@ -168,7 +168,7 @@ const EMPTY_ENTITIES = { companies: [], skills: [], hackathons: [], gaps: [], su
 
 /** Step 1 of ingest: pull career entities out of raw job/careers-page content. */
 export async function extractEntities(content, userStack = []) {
-  const { text } = await tryGenerate('extractEntities', {
+  const baseOptions = {
     system: 'You extract structured career intelligence for Indian software developers. '
       + 'Only report entities that genuinely appear in the source. Never invent companies, '
       + 'salaries, or deadlines. Respond with JSON only.',
@@ -181,13 +181,22 @@ ${content.slice(0, 6000)}
 
 Extract the companies, skills, hackathons and skill gaps this content implies for
 this developer. "gaps" are skills the content requires that are missing from the
-developer's stack. Write a one-sentence summary of what this content is.`,
-    json: true,
-    schema: ENTITY_SCHEMA,
-    maxOutputTokens: 1600,
-  }, null)
+developer's stack. Write a one-sentence summary of what this content is.
 
-  const parsed = parseJson(text, null)
+Respond as JSON: {"companies": [{"name": "...", "type": "...", "skills_required": ["..."], "notes": "..."}], "skills": [{"name": "...", "category": "...", "relevance": "..."}], "hackathons": [{"name": "...", "platform": "...", "skills_relevant": ["..."], "deadline": "...", "prize": "..."}], "gaps": [{"skill": "...", "why": "...", "urgency": "..."}], "summary": "..."}`,
+    json: true,
+    maxOutputTokens: 1600,
+  }
+
+  // First try: strict responseSchema. Some providers/models reject nested
+  // schemas — retry once without it rather than silently returning nothing.
+  let { text } = await tryGenerate('extractEntities', { ...baseOptions, schema: ENTITY_SCHEMA }, null)
+  let parsed = parseJson(text, null)
+  if (!parsed) {
+    const retry = await tryGenerate('extractEntities:plain-json', baseOptions, null)
+    parsed = parseJson(retry.text, null)
+  }
+
   if (!parsed) return { ...EMPTY_ENTITIES }
   return {
     companies: Array.isArray(parsed.companies) ? parsed.companies : [],
