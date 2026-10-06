@@ -266,48 +266,56 @@ export default function Dashboard({ user, profile, graph, onNavigate, onOpenChat
 
   return (
     <div className="dash">
-      {/* Welcome */}
+      {/* Welcome — simple strip on the page, not a card */}
       <section className="dash-welcome">
         <svg className="dash-welcome-mountains" viewBox="0 0 640 170" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">
           <defs>
-            <radialGradient id="dash-sunset" cx="68%" cy="88%" r="55%">
-              <stop offset="0%" stopColor="#fb923c" stopOpacity="0.5" />
-              <stop offset="45%" stopColor="#ec4899" stopOpacity="0.22" />
+            <radialGradient id="dash-sunset" cx="70%" cy="82%" r="60%">
+              <stop offset="0%" stopColor="#fdba74" stopOpacity="0.9" />
+              <stop offset="35%" stopColor="#fb923c" stopOpacity="0.5" />
+              <stop offset="65%" stopColor="#ec4899" stopOpacity="0.2" />
               <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
             </radialGradient>
+            <linearGradient id="dash-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#0a1030" />
+              <stop offset="100%" stopColor="#141b4a" />
+            </linearGradient>
             <linearGradient id="dash-range-back" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#232c5e" />
-              <stop offset="100%" stopColor="#141b3f" />
+              <stop offset="0%" stopColor="#3d4682" />
+              <stop offset="100%" stopColor="#232a5e" />
             </linearGradient>
             <linearGradient id="dash-range-front" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10173a" />
-              <stop offset="100%" stopColor="#080d22" />
+              <stop offset="0%" stopColor="#202858" />
+              <stop offset="100%" stopColor="#0e1434" />
             </linearGradient>
           </defs>
+          <rect x="0" y="0" width="640" height="170" fill="url(#dash-sky)" />
           <rect x="0" y="0" width="640" height="170" fill="url(#dash-sunset)" />
           {/* stars */}
-          <g fill="#ffffff" opacity="0.7">
-            <circle cx="120" cy="28" r="1.3" />
-            <circle cx="250" cy="18" r="1" />
-            <circle cx="380" cy="32" r="1.4" />
-            <circle cx="500" cy="16" r="1" />
-            <circle cx="580" cy="40" r="1.2" />
-            <circle cx="60" cy="52" r="1" />
-            <circle cx="320" cy="55" r="1" />
+          <g fill="#ffffff" opacity="0.8">
+            <circle cx="120" cy="28" r="1.4" />
+            <circle cx="250" cy="18" r="1.1" />
+            <circle cx="380" cy="30" r="1.5" />
+            <circle cx="500" cy="14" r="1.1" />
+            <circle cx="580" cy="38" r="1.3" />
+            <circle cx="60" cy="52" r="1.1" />
+            <circle cx="320" cy="54" r="1.1" />
+            <circle cx="450" cy="52" r="1" />
           </g>
           {/* back range */}
           <path
-            d="M0 170 L0 118 L70 66 L130 104 L210 44 L290 100 L370 58 L450 108 L530 72 L600 112 L640 96 L640 170 Z"
+            d="M0 170 L0 112 L70 58 L130 100 L210 36 L290 96 L370 50 L450 104 L530 64 L600 108 L640 90 L640 170 Z"
             fill="url(#dash-range-back)"
           />
           {/* snow caps on back range */}
-          <g fill="#e8ecff" opacity="0.85">
-            <path d="M210 44 l14 22 -8 -4 -6 8 -7 -9 -8 5 15 -22Z" />
-            <path d="M370 58 l12 18 -7 -3 -5 7 -6 -8 -7 4 13 -18Z" />
+          <g fill="#eef1ff" opacity="0.9">
+            <path d="M210 36 l15 24 -8 -4 -6 8 -7 -9 -9 5 15 -24Z" />
+            <path d="M370 50 l13 20 -7 -3 -5 7 -6 -8 -8 4 13 -20Z" />
+            <path d="M70 58 l11 17 -6 -3 -5 6 -5 -7 -6 4 11 -17Z" />
           </g>
           {/* front range */}
           <path
-            d="M0 170 L0 138 L90 88 L170 132 L270 82 L370 136 L460 96 L550 134 L640 118 L640 170 Z"
+            d="M0 170 L0 134 L90 82 L170 128 L270 76 L370 132 L460 90 L550 130 L640 112 L640 170 Z"
             fill="url(#dash-range-front)"
           />
         </svg>

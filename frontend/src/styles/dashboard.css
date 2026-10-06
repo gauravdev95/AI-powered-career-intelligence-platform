@@ -28,13 +28,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 26px 28px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background:
-    radial-gradient(600px 200px at 85% 120%, rgba(236, 72, 153, 0.16), transparent 60%),
-    radial-gradient(700px 240px at 60% -40%, rgba(67, 56, 202, 0.35), transparent 65%),
-    linear-gradient(135deg, #0b1230 0%, #070d22 100%);
+  padding: 10px 14px;
 }
 .dash-welcome-title {
   margin: 0 0 6px;
