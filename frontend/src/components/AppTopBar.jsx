@@ -86,7 +86,6 @@ export default function AppTopBar({ user, onLogout, onUpgrade, onSearch, onAIAss
               <strong>{displayName}</strong>
               <small className={user ? 'is-free' : ''}>{plan}</small>
             </span>
-            <Icon name="chevron-down" className="apptop-svg-sm" />
           </button>
           {menuOpen && (
             <div className="apptop-popover apptop-menu" role="menu">
