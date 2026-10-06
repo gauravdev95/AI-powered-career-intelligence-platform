@@ -181,14 +181,6 @@ export default function App() {
     }
   }, [PANEL_NAV_IDS])
 
-  /** Dashboard → open a gap node in the career graph view. */
-  const handleSelectGap = useCallback(skill => {
-    setNavView('graph')
-    setSelectedNode(null)
-    setRightPanel(null)
-    focusNode(`skill-gap:${skill}`, { openPanel: true })
-  }, [focusNode])
-
   /** Top-bar search / AI assistant → open Career Chat, optionally with a question. */
   const openChat = useCallback(question => {
     setNavView('graph')
@@ -356,6 +348,14 @@ export default function App() {
     setRightPanel(null)
     if (detail.mobileView) setActiveMobileView(detail.mobileView)
   }, [graph.nodeMap])
+
+  /** Dashboard → open a gap node in the career graph view. */
+  const handleSelectGap = useCallback(skill => {
+    setNavView('graph')
+    setSelectedNode(null)
+    setRightPanel(null)
+    focusNode(`skill-gap:${skill}`, { openPanel: true })
+  }, [focusNode])
 
   function handleMobileTab(id) {
     setActiveMobileView(id)
