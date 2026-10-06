@@ -54,12 +54,13 @@ function timeAgo(iso) {
 /* ── SVG career graph ────────────────────────────────────────────────────── */
 
 const CLUSTER_DEFS = [
-  { id: 'skills', label: 'Skills', color: '#22c55e', icon: 'code', x: 300, y: 66 },
-  { id: 'goals', label: 'Goals', color: '#a855f7', icon: 'target', x: 108, y: 168 },
-  { id: 'companies', label: 'Companies', color: '#f59e0b', icon: 'briefcase', x: 492, y: 168 },
-  { id: 'learning', label: 'Learning', color: '#ec4899', icon: 'wiki', x: 300, y: 354 },
+  { id: 'skills', label: 'Skills', color: '#22c55e', icon: 'code', x: 320, y: 80 },
+  { id: 'goals', label: 'Goals', color: '#a855f7', icon: 'target', x: 130, y: 185 },
+  { id: 'companies', label: 'Companies', color: '#f59e0b', icon: 'briefcase', x: 510, y: 185 },
+  { id: 'learning', label: 'Learning', color: '#ec4899', icon: 'wiki', x: 320, y: 360 },
 ]
-const CENTER = { x: 300, y: 210 }
+const CENTER = { x: 320, y: 220 }
+const VB = { w: 640, h: 440 } // viewBox — satellites are clamped inside it
 
 function clusterItems(clusterId, profile, graph) {
   if (clusterId === 'skills') return (graph.knownSkills ?? []).slice(0, 5)
@@ -83,7 +84,7 @@ function GraphCanvas({ profile, graph }) {
   if (!hasAny) return null
 
   return (
-    <svg viewBox="0 0 600 420" className="dash-graph-svg" role="img" aria-label="Career graph overview">
+    <svg viewBox={`0 0 ${VB.w} ${VB.h}`} className="dash-graph-svg" role="img" aria-label="Career graph overview">
       <defs>
         <radialGradient id="dash-you" cx="35%" cy="30%" r="80%">
           <stop offset="0%" stopColor="#8b7bff" />
@@ -102,9 +103,12 @@ function GraphCanvas({ profile, graph }) {
         const my = (CENTER.y + cluster.y) / 2
         const qx = mx - ny * 34
         const qy = my + nx * 34
-        // Satellite pills fan out perpendicular to the hub direction.
+        // Satellite pills fan out perpendicular to the hub direction,
+        // clamped so they never clip outside the viewBox.
         const px = -ny
         const py = nx
+        const PILL_W = 88
+        const PILL_H = 26
         return (
           <g key={cluster.id}>
             <path
@@ -117,9 +121,11 @@ function GraphCanvas({ profile, graph }) {
               opacity="0.55"
             />
             {cluster.items.map((item, i) => {
-              const off = (i - (cluster.items.length - 1) / 2) * 100
-              const sx = cluster.x + nx * 64 + px * off
-              const sy = cluster.y + ny * 64 + py * off
+              const off = (i - (cluster.items.length - 1) / 2) * 88
+              const rawX = cluster.x + nx * 56 + px * off
+              const rawY = cluster.y + ny * 56 + py * off
+              const sx = Math.min(Math.max(rawX, PILL_W / 2 + 4), VB.w - PILL_W / 2 - 4)
+              const sy = Math.min(Math.max(rawY, PILL_H / 2 + 4), VB.h - PILL_H / 2 - 4)
               return (
                 <g key={`${cluster.id}-${i}`}>
                   <line
@@ -127,14 +133,14 @@ function GraphCanvas({ profile, graph }) {
                     stroke={cluster.color} strokeWidth="1" opacity="0.3"
                   />
                   <rect
-                    x={sx - 46} y={sy - 13} width="92" height="26" rx="13"
+                    x={sx - PILL_W / 2} y={sy - PILL_H / 2} width={PILL_W} height={PILL_H} rx={PILL_H / 2}
                     fill="#0d1730" stroke={cluster.color} strokeOpacity="0.45"
                   />
                   <text
                     x={sx} y={sy + 4} textAnchor="middle"
                     fill="#dbe2f5" fontSize="11" fontWeight="600"
                   >
-                    {trunc(item)}
+                    {trunc(item, 12)}
                   </text>
                 </g>
               )
