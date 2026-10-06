@@ -9,6 +9,7 @@
 @import './styles/graph.css';
 @import './styles/chat.css';
 @import './styles/ingest.css';
+@import './styles/wiki.css';
 
 @tailwind base;
 @tailwind components;

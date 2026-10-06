@@ -4,7 +4,6 @@ import { buildGraph } from './lib/graph.js'
 import DetailPanel from './components/DetailPanel.jsx'
 import EmptyGraphState from './components/EmptyGraphState.jsx'
 import JourneyView from './components/JourneyView.jsx'
-import WikiPanel from './components/WikiPanel.jsx'
 import LandingPage from './components/LandingPage.jsx'
 import AuthScreen from './components/AuthScreen.jsx'
 import MemoryBadge from './components/MemoryBadge.jsx'
@@ -21,6 +20,7 @@ import { Icon } from './components/icons.jsx'
 const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
 const ChatPage = lazy(() => import('./components/ChatPage.jsx'))
 const IngestPage = lazy(() => import('./components/IngestPage.jsx'))
+const WikiPage = lazy(() => import('./components/WikiPage.jsx'))
 
 /** Deepest focus trail we keep. Older hops fall off the front of the breadcrumb. */
 const MAX_FOCUS_DEPTH = 6
@@ -166,7 +166,7 @@ export default function App() {
   // Logo click — go home from anywhere in the app
   const handleGoHome = useCallback(() => setAppState('landing'), [])
 
-  const PANEL_NAV_IDS = useMemo(() => ['roadmap', 'journey', 'wiki'], [])
+  const PANEL_NAV_IDS = useMemo(() => ['roadmap', 'journey'], [])
 
   /** Primary nav: panel ids open their right-side panel over the graph view. */
   const handleNav = useCallback(id => {
@@ -553,19 +553,6 @@ export default function App() {
             <JourneyView userId={userId} />
           </aside>
         )}
-
-        {rightPanel === 'wiki' && (
-          <aside className="detail-panel">
-            <div className="panel-header">
-              <div className="panel-title-wrap">
-                <span className="node-type-badge hackathon">Wiki</span>
-                <span className="panel-title">Wiki Browser</span>
-              </div>
-              <button className="panel-close" type="button" onClick={() => setRightPanel(null)} aria-label="Close">×</button>
-            </div>
-            <WikiPanel userId={userId} />
-          </aside>
-        )}
       </div>
           ) : navView === 'dashboard' ? (
             <Dashboard
@@ -599,6 +586,10 @@ export default function App() {
                 onPagesCreated={pages => setWikiPageCount(prev => prev + pages.length)}
               />
             </Suspense>
+          ) : navView === 'wiki' ? (
+            <Suspense fallback={<LoadingScreen step={0} />}>
+              <WikiPage userId={userId} />
+            </Suspense>
           ) : (
             <ComingSoon page={navView} onBack={() => setNavView('graph')} />
           )}
@@ -616,7 +607,7 @@ export default function App() {
               onFocusNode={id => { focusNode(id); setSidebarOpen(false) }}
               onSetRightPanel={panel => {
                 // Ingest and Chat are full pages now — route them through nav.
-                if (panel === 'ingest' || panel === 'chat') handleNav(panel)
+                if (panel === 'ingest' || panel === 'chat' || panel === 'wiki') handleNav(panel)
                 else setRightPanel(panel)
                 setSelectedNode(null)
                 setSidebarOpen(false)

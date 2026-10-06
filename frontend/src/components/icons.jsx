@@ -107,6 +107,10 @@ export function Icon({ name, className = 'sidebar-icon' }) {
       return <svg {...props}><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1L12 2Z" /></svg>
     case 'code':
       return <svg {...props}><path d="m16 18 6-6-6-6M8 6l-6 6 6 6" /></svg>
+    case 'dots':
+      return <svg {...solid}><circle cx="12" cy="5" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="12" cy="19" r="1.8" /></svg>
+    case 'external':
+      return <svg {...props}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><path d="M15 3h6v6M10 14 21 3" /></svg>
     default:
       return <svg {...props}><circle cx="12" cy="12" r="8" /></svg>
   }
