@@ -17,6 +17,7 @@ import Sidebar from './components/Sidebar.jsx'
 import AppSidebar from './components/AppSidebar.jsx'
 import AppTopBar from './components/AppTopBar.jsx'
 import ComingSoon from './components/ComingSoon.jsx'
+import Dashboard from './components/Dashboard.jsx'
 import { Icon } from './components/icons.jsx'
 
 const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
@@ -101,9 +102,11 @@ export default function App() {
   const [learnedSkills, setLearnedSkills] = useState([])
   const [rightPanel, setRightPanel] = useState(null) // 'ingest' | 'chat' | 'roadmap' | null
   const [wikiPageCount, setWikiPageCount] = useState(0)
-  // Primary navigation shell. 'graph' is the career graph view; panel ids open
-  // their right-side panel over the graph; anything else is a coming-soon page.
-  const [navView, setNavView] = useState('graph')
+  const [profile, setProfile] = useState(null) // full /api/user profile for the dashboard
+  // Primary navigation shell. 'dashboard' is the overview; 'graph' is the career
+  // graph view; panel ids open their right-side panel over the graph view;
+  // anything else is a coming-soon page.
+  const [navView, setNavView] = useState('dashboard')
   const [navCollapsed, setNavCollapsed] = useState(false)
   const [chatQuery, setChatQuery] = useState(null)
   const [chatNonce, setChatNonce] = useState(0)
@@ -178,6 +181,14 @@ export default function App() {
     }
   }, [PANEL_NAV_IDS])
 
+  /** Dashboard → open a gap node in the career graph view. */
+  const handleSelectGap = useCallback(skill => {
+    setNavView('graph')
+    setSelectedNode(null)
+    setRightPanel(null)
+    focusNode(`skill-gap:${skill}`, { openPanel: true })
+  }, [focusNode])
+
   /** Top-bar search / AI assistant → open Career Chat, optionally with a question. */
   const openChat = useCallback(question => {
     setNavView('graph')
@@ -235,6 +246,7 @@ export default function App() {
     setUser(null)
     setUserId(null)
     setUserStack([])
+    setProfile(null)
     setReturnContext(null)
     setAppState('landing')
   }, [])
@@ -285,6 +297,8 @@ export default function App() {
 
     try {
       setLoadingStep(1)
+      const { data: profileData } = await api.get(`/api/user/${uid}`)
+      setProfile(profileData)
       const { data: analyzeData } = await api.post('/api/analyze', { userId: uid, stack, experience }, aiRequest())
       const fetchedStartups = analyzeData.startups ?? []
       setStartups(fetchedStartups)
@@ -590,6 +604,16 @@ export default function App() {
           </aside>
         )}
       </div>
+          ) : navView === 'dashboard' ? (
+            <Dashboard
+              user={user}
+              profile={profile}
+              graph={graph}
+              onNavigate={handleNav}
+              onOpenChat={openChat}
+              onRunAnalysis={handleRetryGraph}
+              onSelectGap={handleSelectGap}
+            />
           ) : (
             <ComingSoon page={navView} onBack={() => setNavView('graph')} />
           )}

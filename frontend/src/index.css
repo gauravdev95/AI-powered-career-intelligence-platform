@@ -5,6 +5,7 @@
 @import './styles/workspace.css';
 @import './styles/auth.css';
 @import './styles/appshell.css';
+@import './styles/dashboard.css';
 
 @tailwind base;
 @tailwind components;
