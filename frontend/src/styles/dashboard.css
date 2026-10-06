@@ -541,4 +541,24 @@
   .dash-hero-title, .dash-hero-sub, .dash-hero-quote { white-space: normal; }
   .dash-stats { grid-template-columns: 1fr; }
   .dash-cardhead { flex-direction: column; }
+  .dash-card { padding: 14px; }
+  .dash-segbtn { padding: 10px 16px; }
+  .dash-viewall { padding: 9px 16px; }
+  .dash-empty-btn { padding: 11px 22px; }
+  .dash-graph-body { min-height: 300px; }
+  .dash-insight { padding: 12px; }
+}
+
+@media (max-width: 480px) {
+  /* Company/gap rows carry many fixed chips — drop the least important ones
+     on narrow phones so nothing overflows or wraps awkwardly. */
+  .dash-chip, .dash-row-sub { display: none; }
+  .dash-stat { padding: 10px 12px; gap: 10px; }
+  .dash-stat-meta strong { font-size: 17px; }
+}
+
+@media (max-width: 380px) {
+  .dash { padding: 12px 10px 20px; gap: 14px; }
+  .dash-card { padding: 12px; border-radius: 15px; }
+  .dash-stats { gap: 10px; }
 }

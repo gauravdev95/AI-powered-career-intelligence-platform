@@ -112,6 +112,7 @@ export default function App() {
   // anything else is a coming-soon page.
   const [navView, setNavView] = useState('dashboard')
   const [navCollapsed, setNavCollapsed] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false) // mobile drawer (<=767px)
   const [chatQuery, setChatQuery] = useState(null)
   const [chatNonce, setChatNonce] = useState(0)
   const [authMode, setAuthMode] = useState('login') // which tab the gate opens on
@@ -145,6 +146,22 @@ export default function App() {
   }, [])
 
   // On mount: the session cookie tells us who is signed in — no localStorage id.
+  // Mobile navigation drawer: close on Escape, and auto-close when the
+  // viewport grows back to desktop widths.
+  useEffect(() => {
+    if (!mobileNavOpen) return
+    const onKey = event => { if (event.key === 'Escape') setMobileNavOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [mobileNavOpen])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const onChange = event => { if (!event.matches) setMobileNavOpen(false) }
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
   useEffect(() => {
     api.get('/api/auth/me')
       .then(({ data }) => {
@@ -470,11 +487,20 @@ export default function App() {
   return (
     <div className="shell">
       {banners}
+      {mobileNavOpen && (
+        <div
+          className="appnav-scrim"
+          onClick={() => setMobileNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       <AppSidebar
         active={activeNavId}
-        onSelect={handleNav}
+        onSelect={id => { handleNav(id); setMobileNavOpen(false) }}
         collapsed={navCollapsed}
         onToggle={() => setNavCollapsed(c => !c)}
+        drawer={mobileNavOpen}
+        onCloseDrawer={() => setMobileNavOpen(false)}
       />
       <div className="shell-main">
         <AppTopBar
@@ -484,6 +510,7 @@ export default function App() {
           onSearch={openChat}
           onAIAssistant={() => openChat(null)}
           onGoHome={() => { setNavView('graph'); focusNode('user') }}
+          onMenu={() => setMobileNavOpen(true)}
         />
         <div className="shell-content">
           {navView === 'graph' ? (

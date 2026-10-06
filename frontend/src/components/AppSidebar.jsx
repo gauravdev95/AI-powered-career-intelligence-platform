@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import logo from '../assets/logo.png'
 import { Icon } from './icons.jsx'
 
@@ -45,9 +45,79 @@ function NavItem({ item, active, collapsed, onSelect }) {
 /**
  * Primary app navigation — dark navy rail matching the product design.
  * Expanded: logo + full labels. Collapsed: logo only (click it to expand).
+ * Drawer: mobile slide-in variant (<=767px), rendered when `drawer` is true.
  */
-export default function AppSidebar({ active, onSelect, collapsed, onToggle }) {
+export default function AppSidebar({ active, onSelect, collapsed, onToggle, drawer, onCloseDrawer }) {
   const [toolsOpen, setToolsOpen] = useState(true)
+  const [entered, setEntered] = useState(false)
+  const drawerRef = useRef(null)
+
+  useEffect(() => {
+    if (!drawer) { setEntered(false); return }
+    // Two RAFs so the slide-in transition runs after first paint.
+    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setEntered(true)))
+    if (drawerRef.current) drawerRef.current.focus({ preventScroll: true })
+    return () => cancelAnimationFrame(raf)
+  }, [drawer])
+
+  if (drawer) {
+    return (
+      <aside
+        ref={drawerRef}
+        className={`appnav appnav--drawer ${entered ? 'is-open' : ''}`}
+        aria-label="Primary"
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="appnav-brand">
+          <img src={logo} alt="Grafted logo" className="appnav-logo-img" />
+          <span className="appnav-word">Grafted</span>
+          <button type="button" className="appnav-collapse" onClick={onCloseDrawer} title="Close navigation" aria-label="Close navigation">
+            <Icon name="x" className="appnav-svg-sm" />
+          </button>
+        </div>
+
+        <nav className="appnav-scroll">
+          <div className="appnav-group">
+            {MAIN_NAV.map(item => (
+              <NavItem key={item.id} item={item} active={active === item.id} collapsed={false} onSelect={onSelect} />
+            ))}
+          </div>
+
+          <div className="appnav-group">
+            <button
+              type="button"
+              className="appnav-section-toggle"
+              onClick={() => setToolsOpen(o => !o)}
+              aria-expanded={toolsOpen}
+            >
+              <span>Tools</span>
+              <Icon name="chevron-down" className={`appnav-svg-sm ${toolsOpen ? 'is-open' : ''}`} />
+            </button>
+            {toolsOpen && TOOL_NAV.map(item => (
+              <NavItem key={item.id} item={item} active={active === item.id} collapsed={false} onSelect={onSelect} />
+            ))}
+          </div>
+
+          <div className="appnav-group">
+            {SYSTEM_NAV.map(item => (
+              <NavItem key={item.id} item={item} active={active === item.id} collapsed={false} onSelect={onSelect} />
+            ))}
+          </div>
+        </nav>
+
+        <div className="appnav-upgrade">
+          <span className="appnav-upgrade-icon" aria-hidden="true"><Icon name="crown" className="appnav-svg" /></span>
+          <span className="appnav-upgrade-text">
+            <strong>Upgrade to Pro</strong>
+            <small>Unlock advanced AI insights, more matches and unlimited memory.</small>
+          </span>
+          <span className="appnav-upgrade-arrow" aria-hidden="true">›</span>
+        </div>
+      </aside>
+    )
+  }
 
   if (collapsed) {
     return (

@@ -5,7 +5,7 @@ import { Icon } from './icons.jsx'
  * Top navigation bar: global search, AI Assistant shortcut, notifications,
  * and the user chip with an account dropdown menu.
  */
-export default function AppTopBar({ user, onLogout, onUpgrade, onSearch, onAIAssistant, onGoHome }) {
+export default function AppTopBar({ user, onLogout, onUpgrade, onSearch, onAIAssistant, onGoHome, onMenu }) {
   const [query, setQuery] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [bellOpen, setBellOpen] = useState(false)
@@ -35,6 +35,11 @@ export default function AppTopBar({ user, onLogout, onUpgrade, onSearch, onAIAss
 
   return (
     <header className="apptop">
+      {onMenu && (
+        <button type="button" className="apptop-menubtn" onClick={onMenu} aria-label="Open navigation menu">
+          <Icon name="menu" className="apptop-svg" />
+        </button>
+      )}
       <form className="apptop-search" onSubmit={submitSearch} role="search">
         <Icon name="search" className="apptop-search-icon" />
         <input
