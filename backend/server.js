@@ -556,6 +556,12 @@ app.post('/api/ingest', aiLimiter, asyncHandler(async (req, res) => {
     source: inputType === 'url' ? sourceUrl : `${content.slice(0, 80)}…`,
     pagesCreated: pages.length,
     summary: entities.summary,
+    entities: {
+      companies: (entities.companies ?? []).map(c => c.name).filter(Boolean).slice(0, 10),
+      skills: (entities.skills ?? []).map(s => s.name).filter(Boolean).slice(0, 15),
+      projects: (entities.hackathons ?? []).map(h => h.name).filter(Boolean).slice(0, 10),
+      gaps: (entities.gaps ?? []).map(g => g.skill).filter(Boolean).slice(0, 10),
+    },
   })
   await engine.recordJourney(userId, 'wiki_ingest', {
     title: entities.summary?.slice(0, 120) || 'Content ingested',
@@ -571,9 +577,19 @@ app.post('/api/ingest', aiLimiter, asyncHandler(async (req, res) => {
       skills: entities.skills?.length ?? 0,
       hackathons: entities.hackathons?.length ?? 0,
       gaps: entities.gaps?.length ?? 0,
+      companyNames: (entities.companies ?? []).map(c => c.name).filter(Boolean).slice(0, 10),
+      skillNames: (entities.skills ?? []).map(s => s.name).filter(Boolean).slice(0, 15),
+      projectNames: (entities.hackathons ?? []).map(h => h.name).filter(Boolean).slice(0, 10),
+      gapNames: (entities.gaps ?? []).map(g => g.skill).filter(Boolean).slice(0, 10),
     },
     pages,
   })
+}))
+
+// ── Ingest history for the Ingest page ───────────────────────────────────────
+app.get('/api/ingest/:userId/recent', asyncHandler(async (req, res) => {
+  const userId = await requireSessionUser(req, req.params.userId)
+  res.json({ ingestions: await engine.getIngestLog(userId, 10) })
 }))
 
 app.get('/api/wiki-pages/:userId', asyncHandler(async (req, res) => {

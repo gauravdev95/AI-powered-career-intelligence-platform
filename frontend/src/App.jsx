@@ -3,7 +3,6 @@ import api, { aiRequest } from './lib/api.js'
 import { buildGraph } from './lib/graph.js'
 import DetailPanel from './components/DetailPanel.jsx'
 import EmptyGraphState from './components/EmptyGraphState.jsx'
-import IngestPanel from './components/IngestPanel.jsx'
 import JourneyView from './components/JourneyView.jsx'
 import WikiPanel from './components/WikiPanel.jsx'
 import LandingPage from './components/LandingPage.jsx'
@@ -21,6 +20,7 @@ import { Icon } from './components/icons.jsx'
 
 const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
 const ChatPage = lazy(() => import('./components/ChatPage.jsx'))
+const IngestPage = lazy(() => import('./components/IngestPage.jsx'))
 
 /** Deepest focus trail we keep. Older hops fall off the front of the breadcrumb. */
 const MAX_FOCUS_DEPTH = 6
@@ -166,7 +166,7 @@ export default function App() {
   // Logo click — go home from anywhere in the app
   const handleGoHome = useCallback(() => setAppState('landing'), [])
 
-  const PANEL_NAV_IDS = useMemo(() => ['roadmap', 'journey', 'ingest', 'wiki'], [])
+  const PANEL_NAV_IDS = useMemo(() => ['roadmap', 'journey', 'wiki'], [])
 
   /** Primary nav: panel ids open their right-side panel over the graph view. */
   const handleNav = useCallback(id => {
@@ -486,7 +486,7 @@ export default function App() {
       <div className="cg-shell">
         {graphIsEmpty ? (
           <EmptyGraphState
-            onIngest={() => { setRightPanel('ingest'); setSelectedNode(null) }}
+            onIngest={() => { setNavView('ingest'); setSelectedNode(null) }}
             onStartups={() => setActiveMobileView('startups')}
             onHackathons={() => setActiveMobileView('hackathons')}
           />
@@ -527,22 +527,6 @@ export default function App() {
             onSave={() => window.dispatchEvent(new CustomEvent('grafted:memory-saved'))}
           />
         ) : null}
-
-        {rightPanel === 'ingest' && (
-          <aside className="detail-panel">
-            <div className="panel-header">
-              <div className="panel-title-wrap">
-                <span className="node-type-badge skill_known">Wiki</span>
-                <span className="panel-title">Feed your wiki</span>
-              </div>
-              <button className="panel-close" type="button" onClick={() => setRightPanel(null)} aria-label="Close">×</button>
-            </div>
-            <IngestPanel
-              userId={userId}
-              onPagesCreated={pages => setWikiPageCount(prev => prev + pages.length)}
-            />
-          </aside>
-        )}
 
         {rightPanel === 'roadmap' && (
           <aside className="detail-panel">
@@ -608,6 +592,13 @@ export default function App() {
                 chatKey={chatNonce}
               />
             </Suspense>
+          ) : navView === 'ingest' ? (
+            <Suspense fallback={<LoadingScreen step={0} />}>
+              <IngestPage
+                userId={userId}
+                onPagesCreated={pages => setWikiPageCount(prev => prev + pages.length)}
+              />
+            </Suspense>
           ) : (
             <ComingSoon page={navView} onBack={() => setNavView('graph')} />
           )}
@@ -623,7 +614,13 @@ export default function App() {
             <Sidebar
               {...sidebarProps}
               onFocusNode={id => { focusNode(id); setSidebarOpen(false) }}
-              onSetRightPanel={panel => { setRightPanel(panel); setSelectedNode(null); setSidebarOpen(false) }}
+              onSetRightPanel={panel => {
+                // Ingest and Chat are full pages now — route them through nav.
+                if (panel === 'ingest' || panel === 'chat') handleNav(panel)
+                else setRightPanel(panel)
+                setSelectedNode(null)
+                setSidebarOpen(false)
+              }}
             />
           </div>
         </>

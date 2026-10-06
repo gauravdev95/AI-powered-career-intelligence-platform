@@ -8,6 +8,7 @@
 @import './styles/dashboard.css';
 @import './styles/graph.css';
 @import './styles/chat.css';
+@import './styles/ingest.css';
 
 @tailwind base;
 @tailwind components;

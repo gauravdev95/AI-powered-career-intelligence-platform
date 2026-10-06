@@ -153,3 +153,6 @@ CREATE TABLE IF NOT EXISTS ingest_log (
 );
 
 CREATE INDEX IF NOT EXISTS ingest_log_user_created_idx ON ingest_log (user_id, created_at DESC);
+
+-- Extracted entity names per ingestion, for the Ingest page history.
+ALTER TABLE ingest_log ADD COLUMN IF NOT EXISTS entities JSONB NOT NULL DEFAULT '{}';

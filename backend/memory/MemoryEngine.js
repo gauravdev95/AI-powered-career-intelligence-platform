@@ -846,10 +846,29 @@ export async function generateRoadmap(userId) {
 
 export async function appendIngestLog(userId, entry) {
   await query(
-    `INSERT INTO ingest_log (user_id, input_type, source, pages_created, summary)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [userId, entry.inputType, String(entry.source ?? '').slice(0, 500), entry.pagesCreated ?? 0, String(entry.summary ?? '').slice(0, 1000)],
+    `INSERT INTO ingest_log (user_id, input_type, source, pages_created, summary, entities)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [userId, entry.inputType, String(entry.source ?? '').slice(0, 500), entry.pagesCreated ?? 0, String(entry.summary ?? '').slice(0, 1000), JSON.stringify(entry.entities ?? {})],
   )
+}
+
+export async function getIngestLog(userId, limit = 10) {
+  const { rows } = await query(
+    `SELECT input_type, source, pages_created, summary, entities, created_at
+     FROM ingest_log
+     WHERE user_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2`,
+    [userId, Math.min(limit, 25)],
+  )
+  return rows.map(row => ({
+    inputType: row.input_type,
+    source: row.source,
+    pagesCreated: row.pages_created,
+    summary: row.summary,
+    entities: row.entities ?? {},
+    createdAt: row.created_at,
+  }))
 }
 
 // ── Diagnostics ─────────────────────────────────────────────────────────────
@@ -873,6 +892,6 @@ export default {
   remember, rememberMany, recall, answer,
   saveWikiPage, getWikiPages, getWikiPage, countWikiPages, chunkMarkdown,
   recordJourney, getJourney, recordEntityView, saveGapAnalysis,
-  getReturnContext, generateRoadmap, appendIngestLog, getStats, getGraphData,
+  getReturnContext, generateRoadmap, appendIngestLog, getIngestLog, getStats, getGraphData,
   appendConversation,
 }
