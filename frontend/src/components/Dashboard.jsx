@@ -146,6 +146,14 @@ function GraphCanvas({ profile, graph }) {
               )
             })}
             <circle cx={cluster.x} cy={cluster.y} r="27" fill="#0d1730" stroke={cluster.color} strokeWidth="2" />
+            <foreignObject x={cluster.x - 20} y={cluster.y - 20} width="40" height="40">
+              <div
+                xmlns="http://www.w3.org/1999/xhtml"
+                style={{ width: 40, height: 40, display: 'grid', placeItems: 'center', color: cluster.color }}
+              >
+                <Icon name={cluster.icon} className="dash-hub-icon" />
+              </div>
+            </foreignObject>
             <text
               x={cluster.x} y={cluster.y + 44} textAnchor="middle"
               fill="#dbe2f5" fontSize="12.5" fontWeight="700"
@@ -270,24 +278,24 @@ export default function Dashboard({ user, profile, graph, onNavigate, onOpenChat
       {/* Stat cards */}
       <section className="dash-stats">
         <div className="dash-stat">
-          <span className="dash-stat-icon" style={{ background: 'rgba(59,130,246,0.14)', color: '#60a5fa' }}><Icon name="user" className="dash-stat-svg" /></span>
+          <span className="dash-stat-icon dash-tile-blue"><Icon name="user-solid" className="dash-stat-svg" /></span>
           <span className="dash-stat-meta"><small>Profile</small><strong>Complete</strong></span>
           <span className="dash-ring" style={{ '--p': completion }} aria-label={`${completion}% complete`}>
             <span>{completion}%</span>
           </span>
         </div>
         <div className="dash-stat">
-          <span className="dash-stat-icon" style={{ background: 'rgba(34,197,94,0.14)', color: '#4ade80' }}><Icon name="skill" className="dash-stat-svg" /></span>
+          <span className="dash-stat-icon dash-tile-green"><Icon name="bolt" className="dash-stat-svg" /></span>
           <span className="dash-stat-meta"><small>Skills</small><strong>{skills.length}</strong></span>
           <span className="dash-stat-delta">{learning.length > 0 ? `+${learning.length} learning` : 'in your stack'}</span>
         </div>
         <div className="dash-stat">
-          <span className="dash-stat-icon" style={{ background: 'rgba(168,85,247,0.14)', color: '#c084fc' }}><Icon name="briefcase" className="dash-stat-svg" /></span>
+          <span className="dash-stat-icon dash-tile-purple"><Icon name="case-solid" className="dash-stat-svg" /></span>
           <span className="dash-stat-meta"><small>Matched Companies</small><strong>{startups.length}</strong></span>
           <span className="dash-stat-delta">{bestMatch ? `top ${bestScore}% match` : 'run analysis'}</span>
         </div>
         <div className="dash-stat">
-          <span className="dash-stat-icon" style={{ background: 'rgba(245,158,11,0.14)', color: '#fbbf24' }}><Icon name="target" className="dash-stat-svg" /></span>
+          <span className="dash-stat-icon dash-tile-orange"><Icon name="target-solid" className="dash-stat-svg" /></span>
           <span className="dash-stat-meta"><small>Active Goals</small><strong>{goals.length}</strong></span>
           <span className="dash-stat-delta">{profile?.target_role ? trunc(profile.target_role, 18) : 'set a goal'}</span>
         </div>
@@ -338,27 +346,27 @@ export default function Dashboard({ user, profile, graph, onNavigate, onOpenChat
           <div className="dash-insights">
             {bestMatch ? (
               <button type="button" className="dash-insight" onClick={() => onNavigate('job-match')}>
-                <span className="dash-insight-icon" style={{ background: 'rgba(59,130,246,0.14)', color: '#60a5fa' }}><Icon name="briefcase" className="dash-stat-svg" /></span>
+                <span className="dash-insight-icon dash-tint-blue"><Icon name="building" className="dash-stat-svg" /></span>
                 <span className="dash-insight-meta"><small>Best Match</small><strong>{bestMatch.name}</strong><span>{bestScore}% match with your current skills</span></span>
                 <span className="dash-insight-arrow" aria-hidden="true">›</span>
               </button>
             ) : null}
             {topGap ? (
               <button type="button" className="dash-insight" onClick={() => onSelectGap(topGap.skill)}>
-                <span className="dash-insight-icon" style={{ background: 'rgba(34,197,94,0.14)', color: '#4ade80' }}><Icon name="skill" className="dash-stat-svg" /></span>
+                <span className="dash-insight-icon dash-tint-green"><Icon name="code" className="dash-stat-svg" /></span>
                 <span className="dash-insight-meta"><small>Top Skill to Learn</small><strong>{topGap.skill}</strong><span>{topGap.why ?? `Priority gap #${topGap.priority ?? '–'}`}</span></span>
                 <span className="dash-insight-arrow" aria-hidden="true">›</span>
               </button>
             ) : null}
             {demandRank ? (
               <button type="button" className="dash-insight" onClick={() => onNavigate('skill-gaps')}>
-                <span className="dash-insight-icon" style={{ background: 'rgba(168,85,247,0.14)', color: '#c084fc' }}><Icon name="graph" className="dash-stat-svg" /></span>
+                <span className="dash-insight-icon dash-tint-purple"><Icon name="gap" className="dash-stat-svg" /></span>
                 <span className="dash-insight-meta"><small>Market Trend</small><strong>{demandRank[0]}</strong><span>Required by {demandRank[1]} of {startups.length} matched companies</span></span>
                 <span className="dash-insight-arrow" aria-hidden="true">›</span>
               </button>
             ) : null}
             <button type="button" className="dash-insight" onClick={() => (topGap ? onSelectGap(topGap.skill) : onNavigate('skill-gaps'))}>
-              <span className="dash-insight-icon" style={{ background: 'rgba(245,158,11,0.14)', color: '#fbbf24' }}><Icon name="resume" className="dash-stat-svg" /></span>
+              <span className="dash-insight-icon dash-tint-orange"><Icon name="flag" className="dash-stat-svg" /></span>
               <span className="dash-insight-meta"><small>Next Step</small><strong>{topGap ? `Learn ${topGap.skill}` : 'Close your first gap'}</strong><span>{topGap?.time_weeks ? `About ${topGap.time_weeks} weeks of focused work` : 'Start with your highest-priority gap'}</span></span>
               <span className="dash-insight-arrow" aria-hidden="true">›</span>
             </button>
@@ -410,8 +418,8 @@ export default function Dashboard({ user, profile, graph, onNavigate, onOpenChat
                 return (
                   <li key={gap.skill}>
                     <button type="button" className="dash-row dash-rowbtn" onClick={() => onSelectGap(gap.skill)}>
-                      <span className="dash-row-avatar" style={{ background: 'rgba(168,85,247,0.14)', color: '#c084fc' }} aria-hidden="true">
-                        <Icon name="skill" className="dash-row-svg" />
+                      <span className="dash-row-avatar dash-tint-purple" aria-hidden="true">
+                        <Icon name="code" className="dash-row-svg" />
                       </span>
                       <span className="dash-row-meta"><strong>{gap.skill}</strong></span>
                       <span className={`dash-prio dash-prio--${pr.tone}`}>{pr.label}</span>

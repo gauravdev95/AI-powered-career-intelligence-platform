@@ -1,6 +1,20 @@
 export function Icon({ name, className = 'sidebar-icon' }) {
   const props = { className, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  // Solid (filled) variants for the dashboard — matches the reference design.
+  const solid = { className, viewBox: '0 0 24 24', fill: 'currentColor', stroke: 'none' }
   switch (name) {
+    case 'user-solid':
+      return <svg {...solid}><path d="M12 11a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2.2c-4.9 0-8.8 2.4-8.8 5.8v1.5a1 1 0 0 0 1 1H19.8a1 1 0 0 0 1-1V19c0-3.4-3.9-5.8-8.8-5.8Z" /></svg>
+    case 'bolt':
+      return <svg {...solid}><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" /></svg>
+    case 'case-solid':
+      return <svg {...solid}><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2h5a1 1 0 0 1 1 1v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1h5Zm2 0h4V5a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v2Z" /></svg>
+    case 'target-solid':
+      return <svg {...solid}><path fillRule="evenodd" d="M12 1.8a10.2 10.2 0 1 0 0 20.4 10.2 10.2 0 0 0 0-20.4Zm0 4.2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Zm0 3.4a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2Z" clipRule="evenodd" /></svg>
+    case 'building':
+      return <svg {...props}><rect x="4" y="3" width="16" height="18" rx="1.5" /><path d="M9 21v-3.5h6V21M8.5 7.5h2M8.5 11h2M13.5 7.5h2M13.5 11h2M8.5 14.5h2M13.5 14.5h2" /></svg>
+    case 'flag':
+      return <svg {...solid}><path d="M5 2a1 1 0 0 0-1 1v18a1 1 0 1 0 2 0v-6.3h11.6a.5.5 0 0 0 .4-.8L14.6 8.6a1 1 0 0 1 0-1.2L18 2.1a.5.5 0 0 0-.4-.1H5Z" /></svg>
     case 'user':
       return <svg {...props}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
     case 'skill':

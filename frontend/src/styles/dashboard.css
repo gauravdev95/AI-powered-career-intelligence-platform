@@ -83,7 +83,20 @@
   display: grid;
   place-items: center;
   border-radius: 13px;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
+/* gradient tiles — matches the reference design */
+.dash-tile-blue { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.dash-tile-green { background: linear-gradient(135deg, #4ade80, #16a34a); }
+.dash-tile-purple { background: linear-gradient(135deg, #c084fc, #9333ea); }
+.dash-tile-orange { background: linear-gradient(135deg, #fbbf24, #d97706); }
+/* soft tinted tiles for insight / row icons */
+.dash-tint-blue { background: rgba(59, 130, 246, 0.14); color: #60a5fa; }
+.dash-tint-green { background: rgba(34, 197, 94, 0.14); color: #4ade80; }
+.dash-tint-purple { background: rgba(168, 85, 247, 0.14); color: #c084fc; }
+.dash-tint-orange { background: rgba(245, 158, 11, 0.14); color: #fbbf24; }
+.dash-hub-icon { width: 21px; height: 21px; }
 .dash-stat-svg { width: 22px; height: 22px; }
 .dash-stat-meta {
   flex: 1;
