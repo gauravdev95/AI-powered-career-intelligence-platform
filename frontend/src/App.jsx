@@ -306,10 +306,7 @@ export default function App() {
       // Stay on the dashboard and show the error banner (with retry) — never
       // bounce the user back to onboarding step 1 after they completed it.
       const kind = classifyError(err)
-      const code = err.response?.data?.code
-      // TEMP-DIAG: surface the backend error code in the banner while
-      // diagnosing the dashboard "Run analysis" failure. Remove after.
-      setError(code ? `${ERROR_MESSAGES[kind]} [${code}]` : ERROR_MESSAGES[kind])
+      setError(ERROR_MESSAGES[kind])
     } finally {
       setLoading(false)
     }
