@@ -420,3 +420,11 @@
   .help-form-grid { grid-template-columns: 1fr; }
   .help-topics { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 400px) {
+  .help-card { padding: 16px 14px; }
+  .help-tab { padding: 9px 13px; font-size: 12.5px; }
+  .help-faq-q { padding: 13px 14px; font-size: 13px; }
+  .help-faq-a { padding: 0 14px 14px 14px; }
+  .help-btn { min-height: 42px; width: 100%; justify-content: center; }
+}

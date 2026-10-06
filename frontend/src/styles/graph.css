@@ -256,6 +256,7 @@
 .cg-network {
   position: absolute;
   inset: 0;
+  touch-action: none; /* let vis-network own pan/pinch gestures on touch */
   /* starfield */
   background:
     radial-gradient(1px 1px at 12% 22%, rgba(255, 255, 255, 0.5), transparent),
@@ -849,4 +850,15 @@ button.cg-pill:hover { border-color: rgba(255, 255, 255, 0.25); }
   .cg-minimap { display: none; }
   .detail-panel.cg-panel { width: min(372px, 100vw); flex-basis: auto; }
   .cg-split { grid-template-columns: 1fr; }
+  /* touch-sized controls */
+  .cg-zoom-controls button { min-width: 42px; height: 42px; }
+  .cg-tab { padding: 10px 16px; font-size: 13px; }
+  .cg-view-btn { padding: 9px 14px; }
+  .cg-legend { display: none; }
+}
+
+@media (max-width: 400px) {
+  .cg-tabs { gap: 6px; }
+  .cg-tab { padding: 9px 13px; font-size: 12.5px; }
+  .cg-zoom-controls { left: 10px; bottom: 10px; }
 }

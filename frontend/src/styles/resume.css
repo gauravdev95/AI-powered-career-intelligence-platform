@@ -551,3 +551,10 @@ span.rh-doc-empty { font-size: 12px; }
   .rh-col-right { grid-template-columns: 1fr; }
   .rh-jd-cols { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 400px) {
+  .rh-tab { padding: 9px 13px; font-size: 12.5px; }
+  .rh-doc { padding: 18px 16px; }
+  .rh-doc h1 { font-size: 20px; }
+  .rh-card { padding: 16px 14px; }
+}

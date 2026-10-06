@@ -577,4 +577,17 @@
   .rich-table { min-width: 520px; }
   .rich-row { flex-wrap: wrap; }
   .model-chip { margin-left: 0; }
+  /* full-width bubbles, touch-sized composer */
+  .chat-msg { max-width: 100%; gap: 8px; }
+  .chat-msg.user { max-width: 100%; }
+  .chat-bubble { padding: 11px 13px; font-size: 13px; }
+  .chat-avatar { width: 30px; height: 30px; font-size: 12px; }
+  .composer-icon-btn { width: 42px; height: 42px; }
+  .composer-row { border-radius: 16px; }
+}
+
+@media (max-width: 400px) {
+  .qa-cards { grid-template-columns: 1fr; }
+  .chat-page-head { flex-wrap: wrap; }
+  .chat-thread { padding: 12px 4px; }
 }

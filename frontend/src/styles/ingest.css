@@ -531,4 +531,11 @@
   .history-chips { display: none; }
   .history-time { display: none; }
   .ingest-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+  .ingest-tab { padding: 11px 10px; }
+}
+
+@media (max-width: 400px) {
+  .ingest-card { padding: 16px 14px; }
+  .ingest-cta { font-size: 14px; padding: 13px; }
+  .shot-drop, .file-drop { padding: 22px 12px; }
 }

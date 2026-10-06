@@ -2378,6 +2378,13 @@ a { color: var(--accent); text-underline-offset: 3px; }
   line-height: 1.4;
 }
 
+@media (max-width: 480px) {
+  .week-header { padding: 12px 14px; }
+  .week-body { padding: 0 14px 14px; }
+  .week-focus { display: none; }
+  .resource-link { overflow-wrap: anywhere; }
+}
+
 .milestone-icon { flex-shrink: 0; }
 
 .roadmap-loading,
@@ -2918,6 +2925,16 @@ a { color: var(--accent); text-underline-offset: 3px; }
   align-items: center;
   justify-content: center;
   height: 200px;
+}
+
+@media (max-width: 480px) {
+  .journey-list { padding: 12px 12px; }
+  .journey-entry { gap: 10px; }
+  .journey-line { width: 28px; }
+  .journey-dot { width: 34px; height: 34px; }
+  .journey-card { padding: 12px 13px; }
+  .journey-card:hover { transform: none; }
+  .journey-header { padding: 12px 14px 10px; }
 }
 
 /* ─── Empty Graph State ───────────────────────────────────────────────────── */

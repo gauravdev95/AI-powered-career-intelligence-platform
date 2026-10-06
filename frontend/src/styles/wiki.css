@@ -720,4 +720,12 @@
   .wiki-search { flex: 1; }
   .wiki-grid { grid-template-columns: 1fr; }
   .wiki-detail { width: 100%; border-left: none; }
+  .wiki-card { padding: 16px; }
+}
+
+@media (max-width: 400px) {
+  .wiki-hero-title { font-size: 24px; }
+  .wiki-tab { padding: 9px 13px; font-size: 12.5px; }
+  .wiki-detail-head { padding: 14px; }
+  .wiki-detail-body { padding: 14px; }
 }

@@ -630,4 +630,13 @@
   .jm-job { flex-wrap: wrap; }
   .jm-job-side { flex-direction: row; width: 100%; align-items: center; }
   .jm-modal-cols { grid-template-columns: 1fr; }
+  .jm-job:hover { transform: none; }
+}
+
+@media (max-width: 400px) {
+  .jm-job { padding: 14px; gap: 12px; }
+  .jm-job-head h3 { font-size: 14px; }
+  .jm-modal { padding: 18px 16px; border-radius: 16px; }
+  .jm-modal-wrap { padding: 12px; }
+  .jm-filters .jm-filter { flex: 1 1 100%; justify-content: space-between; }
 }

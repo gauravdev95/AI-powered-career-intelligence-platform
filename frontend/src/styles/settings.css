@@ -521,3 +521,10 @@ select.set-input option { background: #161d37; }
   .set-account-row { flex-wrap: wrap; }
   .set-plan-card { flex-wrap: wrap; }
 }
+
+@media (max-width: 400px) {
+  .set-card { padding: 16px 14px; }
+  .set-tab { padding: 9px 13px; font-size: 12.5px; }
+  .set-row { gap: 10px; padding: 11px 0; }
+  .set-btn, .set-btn-primary { min-height: 42px; }
+}
