@@ -23,6 +23,8 @@ const IngestPage = lazy(() => import('./components/IngestPage.jsx'))
 const WikiPage = lazy(() => import('./components/WikiPage.jsx'))
 const SettingsPage = lazy(() => import('./components/SettingsPage.jsx'))
 const HelpPage = lazy(() => import('./components/HelpPage.jsx'))
+const ResumeHelperPage = lazy(() => import('./components/ResumeHelperPage.jsx'))
+const JobMatchPage = lazy(() => import('./components/JobMatchPage.jsx'))
 
 /** Deepest focus trail we keep. Older hops fall off the front of the breadcrumb. */
 const MAX_FOCUS_DEPTH = 6
@@ -599,6 +601,14 @@ export default function App() {
           ) : navView === 'help' ? (
             <Suspense fallback={<LoadingScreen step={0} />}>
               <HelpPage userName={user ? (user.name || user.email) : 'Guest'} />
+            </Suspense>
+          ) : navView === 'resume-helper' ? (
+            <Suspense fallback={<LoadingScreen step={0} />}>
+              <ResumeHelperPage userId={userId} onNavigate={handleNav} />
+            </Suspense>
+          ) : navView === 'job-match' ? (
+            <Suspense fallback={<LoadingScreen step={0} />}>
+              <JobMatchPage userId={userId} />
             </Suspense>
           ) : (
             <ComingSoon page={navView} onBack={() => setNavView('graph')} />
