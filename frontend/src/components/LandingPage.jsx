@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { buildGraph, focusSubgraph, SAMPLE_INPUT } from '../lib/graph.js'
+import logo from '../assets/logo.png'
 
 /**
  * Grafted landing page — editorial scroll narrative.
@@ -205,15 +206,7 @@ function Navbar({ onStart, onContinue, isReturning }) {
           onClick={e => { e.preventDefault(); setOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
         >
           <span className="nav-logo" aria-hidden="true">
-            <svg viewBox="0 0 32 32">
-              <path d="M16 30 V17" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M16 17 L24 8" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M16 19 L9 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M11.5 19.5 H20.5 M11.5 22.5 H20.5" stroke="#00d2ff" strokeWidth="1.5" strokeLinecap="round" />
-              <rect x="22" y="6" width="4" height="4" fill="#a855f7" />
-              <rect x="7" y="9" width="4" height="4" fill="#ec4899" />
-              <rect x="14" y="15" width="4" height="4" fill="#00d2ff" />
-            </svg>
+            <img src={logo} alt="" className="nav-logo-img" />
           </span>
           <span className="nav-word">grafted</span>
         </a>

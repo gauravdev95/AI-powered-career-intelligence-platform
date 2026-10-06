@@ -14,6 +14,9 @@ import OnboardingWizard from './components/OnboardingWizard.jsx'
 import ReturningScreen from './components/ReturningScreen.jsx'
 import RoadmapView from './components/RoadmapView.jsx'
 import Sidebar from './components/Sidebar.jsx'
+import AppSidebar from './components/AppSidebar.jsx'
+import AppTopBar from './components/AppTopBar.jsx'
+import ComingSoon from './components/ComingSoon.jsx'
 import { Icon } from './components/icons.jsx'
 
 const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
@@ -76,56 +79,6 @@ function MobileTabs({ active, onChange }) {
   )
 }
 
-/**
- * Collapsed avatar button that opens a small account dropdown menu.
- * Stays out of the way until clicked — no more overlapping the filter bar.
- */
-function AccountMenu({ user, onLogout, onUpgrade, shifted }) {
-  const [open, setOpen] = useState(false)
-  const label = user ? (user.name || user.email) : 'Guest'
-  const initial = (label.trim()[0] || '?').toUpperCase()
-
-  useEffect(() => {
-    if (!open) return undefined
-    const close = () => setOpen(false)
-    document.addEventListener('click', close)
-    return () => document.removeEventListener('click', close)
-  }, [open])
-
-  return (
-    <div className={`account-menu${shifted ? ' account-menu--shifted' : ''}`} role="region" aria-label="Account">
-      <button
-        type="button"
-        className="account-avatar"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        title={label}
-        onClick={e => { e.stopPropagation(); setOpen(o => !o) }}
-      >
-        {initial}
-      </button>
-      {open && (
-        <div className="account-dropdown" role="menu" onClick={e => e.stopPropagation()}>
-          <p className="account-dropdown-name">{label}</p>
-          {user?.email && <p className="account-dropdown-email">{user.email}</p>}
-          {!user && (
-            <p className="account-dropdown-hint">Guest — memory lives in this browser</p>
-          )}
-          {user ? (
-            <button type="button" className="account-dropdown-btn" onClick={() => { setOpen(false); onLogout() }}>
-              Log out
-            </button>
-          ) : (
-            <button type="button" className="account-dropdown-btn accent" onClick={() => { setOpen(false); onUpgrade() }}>
-              Create account
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function App() {
   const [user, setUser] = useState(null) // { userId, name, email, hasPassword } | null
   const [userId, setUserId] = useState(null)
@@ -148,6 +101,12 @@ export default function App() {
   const [learnedSkills, setLearnedSkills] = useState([])
   const [rightPanel, setRightPanel] = useState(null) // 'ingest' | 'chat' | 'roadmap' | null
   const [wikiPageCount, setWikiPageCount] = useState(0)
+  // Primary navigation shell. 'graph' is the career graph view; panel ids open
+  // their right-side panel over the graph; anything else is a coming-soon page.
+  const [navView, setNavView] = useState('graph')
+  const [navCollapsed, setNavCollapsed] = useState(false)
+  const [chatQuery, setChatQuery] = useState(null)
+  const [chatNonce, setChatNonce] = useState(0)
   const [authMode, setAuthMode] = useState('login') // which tab the gate opens on
   const returnToAppRef = useRef(false) // guest upgraded mid-session → back to app
   // The focus trail. Its last entry is the node the canvas is centred on; the
@@ -203,6 +162,32 @@ export default function App() {
 
   // Logo click — go home from anywhere in the app
   const handleGoHome = useCallback(() => setAppState('landing'), [])
+
+  const PANEL_NAV_IDS = useMemo(() => ['chat', 'roadmap', 'journey', 'ingest', 'wiki'], [])
+
+  /** Primary nav: panel ids open their right-side panel over the graph view. */
+  const handleNav = useCallback(id => {
+    if (PANEL_NAV_IDS.includes(id)) {
+      setNavView('graph')
+      setSelectedNode(null)
+      setRightPanel(id)
+    } else {
+      setSelectedNode(null)
+      setRightPanel(null)
+      setNavView(id)
+    }
+  }, [PANEL_NAV_IDS])
+
+  /** Top-bar search / AI assistant → open Career Chat, optionally with a question. */
+  const openChat = useCallback(question => {
+    setNavView('graph')
+    setSelectedNode(null)
+    setRightPanel('chat')
+    if (question) {
+      setChatQuery(question)
+      setChatNonce(n => n + 1)
+    }
+  }, [])
 
   // Called by AuthScreen after login / signup succeeds.
   // Signup → 4-step onboarding (fresh profile). Login → straight to the dashboard.
@@ -461,17 +446,29 @@ export default function App() {
     userName: user ? (user.name || user.email) : 'Guest',
   }
 
+  // Which nav item reads as active: an open panel wins over the graph view.
+  const activeNavId = navView !== 'graph' ? navView : (rightPanel ?? 'graph')
+
   return (
-    <div className="app-shell">
+    <div className="shell">
       {banners}
-      {appState === 'app' && (
-        <AccountMenu
+      <AppSidebar
+        active={activeNavId}
+        onSelect={handleNav}
+        collapsed={navCollapsed}
+        onToggle={() => setNavCollapsed(c => !c)}
+      />
+      <div className="shell-main">
+        <AppTopBar
           user={user}
           onLogout={handleLogout}
           onUpgrade={handleUpgrade}
-          shifted={hasRightPanel}
+          onSearch={openChat}
+          onAIAssistant={() => openChat(null)}
+          onGoHome={() => { setNavView('graph'); focusNode('user') }}
         />
-      )}
+        <div className="shell-content">
+          {navView === 'graph' ? (
       <div className={`graph-layout ${hasRightPanel ? 'panel-open' : ''}`}>
         <Sidebar
           {...sidebarProps}
@@ -545,9 +542,11 @@ export default function App() {
               <button className="panel-close" type="button" onClick={() => setRightPanel(null)} aria-label="Close">×</button>
             </div>
             <ChatInterface
+              key={chatNonce}
               userId={userId}
               userStack={graph.knownSkills}
               wikiPageCount={wikiPageCount}
+              initialQuery={chatQuery}
             />
           </aside>
         )}
@@ -590,6 +589,11 @@ export default function App() {
             <WikiPanel userId={userId} />
           </aside>
         )}
+      </div>
+          ) : (
+            <ComingSoon page={navView} onBack={() => setNavView('graph')} />
+          )}
+        </div>
       </div>
 
       <MobileTabs active={activeMobileView} onChange={handleMobileTab} />

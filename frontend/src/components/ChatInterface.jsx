@@ -41,16 +41,26 @@ function Message({ msg }) {
   )
 }
 
-export default function ChatInterface({ userId, userStack, wikiPageCount }) {
+export default function ChatInterface({ userId, userStack, wikiPageCount, initialQuery }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
+  const initialSentRef = useRef(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Top-bar search hands a question in — send it once on mount.
+  useEffect(() => {
+    if (initialQuery && !initialSentRef.current) {
+      initialSentRef.current = true
+      sendMessage(initialQuery)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function now() {
     return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })

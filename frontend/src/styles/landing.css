@@ -164,9 +164,14 @@
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
-.lp .nav-logo svg {
+.lp .nav-logo svg,
+.lp .nav-logo-img {
   width: 28px;
   height: 28px;
+}
+.lp .nav-logo-img {
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 .lp .nav-word {

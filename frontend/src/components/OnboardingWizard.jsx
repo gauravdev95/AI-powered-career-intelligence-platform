@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import axios, { aiRequest } from '../lib/api.js'
-import DevRadarLogo from './DevRadarLogo.jsx'
+import logo from '../assets/logo.png'
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -634,7 +634,7 @@ export default function OnboardingWizard({ onComplete, waking = false, onGoHome 
               onClick={onGoHome}
               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
             >
-              <DevRadarLogo size={24} />
+              <img src={logo} alt="Grafted" style={{ width: 26, height: 26, borderRadius: 8, objectFit: 'cover' }} />
               <span className="brand-word">grafted</span>
             </button>
             <div style={{ textAlign: 'right' }}>

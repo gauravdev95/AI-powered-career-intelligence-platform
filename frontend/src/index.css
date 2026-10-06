@@ -4,6 +4,7 @@
 @import './styles/nav-and-art.css';
 @import './styles/workspace.css';
 @import './styles/auth.css';
+@import './styles/appshell.css';
 
 @tailwind base;
 @tailwind components;
@@ -427,6 +428,15 @@ a { color: var(--accent); text-underline-offset: 3px; }
 
 .brand-row:hover { opacity: 0.85; }
 
+/* Final product logo mark used in the index sidebar brand row. */
+.brand-logo {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
 .brand-text {
   display: flex;
   flex-direction: column;
@@ -846,7 +856,7 @@ a { color: var(--accent); text-underline-offset: 3px; }
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 68px 0 16px; /* clear the fixed account avatar at top-right */
+  padding: 0 16px;
   border-bottom: 1px solid var(--border-hair);
   background: var(--glass);
   backdrop-filter: blur(12px) saturate(180%);

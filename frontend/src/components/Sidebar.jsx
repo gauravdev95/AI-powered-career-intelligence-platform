@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Icon } from './icons.jsx'
 import ThemeSwitcher from './ThemeSwitcher.jsx'
-import DevRadarLogo from './DevRadarLogo.jsx'
+import logo from '../assets/logo.png'
 
 /**
  * Workspace sidebar — the readable index of the graph.
@@ -97,7 +97,7 @@ export default function Sidebar({
     <aside className="sidebar">
       <div className="sidebar-top">
         <button type="button" onClick={onGoHome} className="brand-row" aria-label="Grafted home">
-          <DevRadarLogo size={24} />
+          <img src={logo} alt="Grafted" className="brand-logo" />
           <span className="brand-text">
             <span className="brand-word">grafted</span>
             <span className="brand-tagline">Your career, remembered</span>

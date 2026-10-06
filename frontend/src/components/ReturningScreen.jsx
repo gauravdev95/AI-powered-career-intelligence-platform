@@ -1,4 +1,4 @@
-import DevRadarLogo from './DevRadarLogo.jsx'
+import logo from '../assets/logo.png'
 
 const FLOAT_CIRCLES = [
   { size: 260, color: 'var(--circle-1)', top: '15%', left: '5%',  dur: '12s', delay: '0s' },
@@ -61,7 +61,7 @@ export default function ReturningScreen({ returnContext, onContinue, waking = fa
           onClick={onGoHome}
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 }}
         >
-          <DevRadarLogo size={28} />
+          <img src={logo} alt="Grafted" style={{ width: 30, height: 30, borderRadius: 9, objectFit: 'cover' }} />
           <span className="brand-word">grafted</span>
         </button>
 
