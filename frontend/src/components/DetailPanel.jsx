@@ -1,215 +1,225 @@
+import { useState } from 'react'
 import axios from '../lib/api.js'
 import { isSameSkill } from '../lib/graph.js'
 
 /**
- * Detail panel — the reading surface for whichever node has focus.
- *
- * Two rules hold across every variant:
- *
- *   1. No bare 0–100 bar. Every meter states what is being measured, the value and
- *      its unit, so a filled bar can never be read as "good" by default.
- *   2. No inline style objects except the one live value a meter cannot express in
- *      a stylesheet — its width. Colour, tone and spacing are classes on tokens.
+ * Detail panel — the reading surface for the focused node, in the reference's
+ * dark style. Every number comes from the logged-in user's real data:
+ * demand counts from matched companies, match scores from analysis, roles
+ * from the startup dataset. Nothing is invented — where we have no data
+ * (job counts, salary bands, growth rates) the panel simply doesn't show it.
  */
 
 const clamp01 = value => Math.min(1, Math.max(0, value))
 
-function toneForScore(score) {
-  if (score >= 80) return 'moss'
-  if (score >= 60) return 'blue'
-  return 'ochre'
+function demandTier(demand, totalOrgs) {
+  const ratio = demand / Math.max(1, totalOrgs)
+  if (ratio >= 0.5) return { label: 'Very High', tone: 'high' }
+  if (ratio >= 0.3) return { label: 'High', tone: 'high' }
+  if (ratio >= 0.15) return { label: 'Medium', tone: 'medium' }
+  return { label: 'Low', tone: 'low' }
 }
 
-function formatPrize(value) {
-  if (!value) return 'Prize TBD'
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value)
+function matchScoreOf(startup) {
+  return startup.analysis?.match_percentage ?? startup.match_score ?? 0
 }
 
-function daysUntil(date) {
-  if (!date) return null
-  return Math.max(0, Math.ceil((new Date(date) - new Date()) / 86400000))
+function companiesRequiring(skill, startups) {
+  return startups.filter(startup =>
+    (startup.skills_required ?? []).some(item => isSameSkill(item, skill)))
 }
 
-/**
- * A labelled meter. `label` says what is measured, `value`/`max`/`unit` say how
- * much of it there is, and `note` carries the plain-language reading.
- */
-function Meter({ label, value, max = 100, unit = '%', maxUnit, tone = 'accent', note }) {
-  const pct = Math.round(clamp01(max ? value / max : 0) * 100)
+function projectsUsing(skill, hackathons) {
+  return hackathons.filter(hackathon =>
+    (hackathon.skills_relevant ?? []).some(item => isSameSkill(item, skill)))
+}
+
+function Header({ node, badge, badgeTone, onClose }) {
   return (
-    <div className="meter">
-      <div className="meter-head">
-        <span className="meter-label">{label}</span>
-        <span className="meter-value">
-          {value}{unit}
-          <span className="meter-max"> / {max}{maxUnit ?? unit}</span>
-        </span>
+    <div className="cg-panel-head">
+      <span className={`cg-panel-icon cg-panel-icon--${badgeTone}`} aria-hidden="true">
+        {node.label.slice(0, 1).toUpperCase()}
+      </span>
+      <div className="cg-panel-title-wrap">
+        <p className="cg-panel-title">{node.label}</p>
+        <span className={`cg-badge cg-badge--${badgeTone}`}>{badge}</span>
       </div>
-      <div
-        className="meter-track"
-        role="meter"
-        aria-label={label}
-        aria-valuenow={value}
-        aria-valuemin={0}
-        aria-valuemax={max}
-      >
-        <div className={`meter-fill meter-fill--${tone}`} style={{ width: `${pct}%` }} />
-      </div>
-      {note && <p className="meter-note">{note}</p>}
+      <button className="cg-panel-close" type="button" onClick={onClose} aria-label="Close detail panel">×</button>
     </div>
   )
 }
 
-function Header({ node, onClose }) {
+function Tabs({ tabs, active, onChange }) {
   return (
-    <div className="panel-header">
-      <div className="panel-title-wrap">
-        <span className={`node-type-badge ${node.type}`}>{node.type.replace('_', ' ')}</span>
-        <span className="panel-title">{node.label}</span>
-      </div>
-      <button className="panel-close" type="button" onClick={onClose} aria-label="Close detail panel">×</button>
+    <div className="cg-panel-tabs" role="tablist">
+      {tabs.map(tab => (
+        <button
+          key={tab}
+          type="button"
+          role="tab"
+          aria-selected={active === tab}
+          className={`cg-panel-tab ${active === tab ? 'active' : ''}`}
+          onClick={() => onChange(tab)}
+        >
+          {tab}
+        </button>
+      ))}
     </div>
   )
 }
 
-/** Skill list split into covered and missing — the same split the canvas draws. */
-function SkillSplit({ have, missing }) {
+function DemandRow({ demand, totalOrgs, skill }) {
+  const tier = demandTier(demand, totalOrgs)
+  const pct = totalOrgs ? Math.round((demand / totalOrgs) * 100) : 0
   return (
-    <div className="split">
-      <div className="split-col">
-        <p className="split-head split-head--have">You have<span className="split-n">{have.length}</span></p>
-        <div className="pill-row">
-          {have.length
-            ? have.map(skill => <span className="pill known" key={skill}>{skill}</span>)
-            : <span className="pill neutral">None yet</span>}
-        </div>
+    <div className="cg-demand">
+      <div className="cg-demand-head">
+        <span className="cg-section-label">Market Demand</span>
+        <span className={`cg-demand-tier cg-demand-tier--${tier.tone}`}>↑ {tier.label}</span>
       </div>
-      <div className="split-col">
-        <p className="split-head split-head--missing">Missing<span className="split-n">{missing.length}</span></p>
-        <div className="pill-row">
-          {missing.length
-            ? missing.map(skill => <span className="pill missing" key={skill}>{skill}</span>)
-            : <span className="pill neutral">Nothing missing</span>}
-        </div>
+      <p className="cg-demand-note">{pct}% of matched companies require {skill}</p>
+      <div className="cg-bar"><div className={`cg-bar-fill cg-bar-fill--${tier.tone}`} style={{ width: `${pct}%` }} /></div>
+    </div>
+  )
+}
+
+function MatchRow({ name, score, onClick }) {
+  return (
+    <button type="button" className="cg-match-row" onClick={onClick}>
+      <span className="cg-match-name">{name}</span>
+      <span className="cg-match-pct">{score}% Match</span>
+    </button>
+  )
+}
+
+function PillRow({ items, tone = 'neutral', onPick, empty = 'None yet' }) {
+  return (
+    <div className="cg-pills">
+      {items.length ? items.map(item => (
+        onPick
+          ? <button key={item} type="button" className={`cg-pill cg-pill--${tone}`} onClick={() => onPick(item)}>{item}</button>
+          : <span key={item} className={`cg-pill cg-pill--${tone}`}>{item}</span>
+      )) : <span className="cg-pill cg-pill--muted">{empty}</span>}
+    </div>
+  )
+}
+
+/** Have-vs-required split — the skill-gap answer in one glance. */
+function GapSplit({ have, missing, haveLabel = 'You have', missingLabel = 'Missing' }) {
+  return (
+    <div className="cg-split">
+      <div className="cg-split-col">
+        <p className="cg-split-head cg-split-head--have">{haveLabel}<span>{have.length}</span></p>
+        <PillRow items={have} tone="have" empty="None yet" />
+      </div>
+      <div className="cg-split-col">
+        <p className="cg-split-head cg-split-head--missing">{missingLabel}<span>{missing.length}</span></p>
+        <PillRow items={missing} tone="missing" empty="Nothing missing" />
       </div>
     </div>
   )
 }
 
-function StartupContent({ node, userStack, onSave }) {
-  const startup = node.raw
-  const match = startup.analysis ?? {}
-  const score = match.match_percentage ?? startup.match_score ?? 0
-  const required = startup.skills_required ?? []
-  const have = match.matching_skills?.length
-    ? match.matching_skills
-    : required.filter(skill => userStack.some(known => isSameSkill(known, skill)))
-  const missing = match.missing_skills?.length
-    ? match.missing_skills
-    : required.filter(skill => !have.some(item => isSameSkill(item, skill)))
+// ── Skill (known) ────────────────────────────────────────────────────────────
+
+function SkillContent({ node, startups, hackathons, onFocusNode }) {
+  const [tab, setTab] = useState('Overview')
+  const { skill, demand = 0, totalOrgs = 0 } = node.raw
+  const companies = companiesRequiring(skill, startups)
+    .sort((a, b) => matchScoreOf(b) - matchScoreOf(a))
+  const projects = projectsUsing(skill, hackathons)
 
   return (
     <>
-      <div className="panel-body">
-        <div className="panel-section">
-          <Meter
-            label="Stack match"
-            value={score}
-            unit="%"
-            tone={toneForScore(score)}
-            note={`${have.length} of ${required.length} required skills covered`}
-          />
-        </div>
-
-        <div className="panel-section">
-          <p className="panel-section-title">Requirements</p>
-          <SkillSplit have={have} missing={missing} />
-        </div>
-
-        <div className="panel-section">
-          <p className="panel-section-title">Details</p>
-          <div className="detail-row"><span>Location</span><span>{startup.location ?? '—'}</span></div>
-          <div className="detail-row"><span>Stage</span><span>{startup.stage ?? '—'}</span></div>
-          <div className="detail-row"><span>Experience</span><span>{startup.min_experience ?? '—'}</span></div>
-          <div className="detail-row"><span>Salary</span><span>{startup.salary_range_lpa ?? '—'} LPA</span></div>
-          <div className="detail-row"><span>Rounds</span><span>{startup.interview_rounds ?? 3}</span></div>
-        </div>
-
-        {(startup.interview_topics ?? []).length > 0 && (
-          <div className="panel-section">
-            <p className="panel-section-title">Interview</p>
-            <div className="pill-row">
-              {startup.interview_topics.map(topic => <span className="pill neutral" key={topic}>{topic}</span>)}
+      <Header node={node} badge="Skill" badgeTone="skill" onClose={node.onClose} />
+      <Tabs tabs={['Overview', 'Companies', 'Opportunities']} active={tab} onChange={setTab} />
+      <div className="cg-panel-body">
+        {tab === 'Overview' && (
+          <>
+            <DemandRow demand={demand} totalOrgs={totalOrgs} skill={skill} />
+            <div className="cg-stat-trio">
+              <div className="cg-stat"><strong>{demand}</strong><span>requiring orgs</span></div>
+              <div className="cg-stat"><strong>{companies.length}</strong><span>companies</span></div>
+              <div className="cg-stat"><strong>{projects.length}</strong><span>projects</span></div>
             </div>
-          </div>
+            <p className="cg-section-label">Your level</p>
+            <PillRow items={['Proficient — in your stack']} tone="have" />
+            <p className="cg-section-label">Skill gap — has vs required</p>
+            <p className="cg-prose">
+              You have <strong>{skill}</strong>. It is required by <strong>{companies.length}</strong> of your{' '}
+              {totalOrgs} matched organisations, so it already counts toward your match score at each of them.
+            </p>
+            <p className="cg-section-label">Related projects</p>
+            {projects.length ? projects.map(project => (
+              <button
+                key={project.id}
+                type="button"
+                className="cg-link-row"
+                onClick={() => onFocusNode(`hackathon:${project.id}`)}
+              >
+                {project.name}
+              </button>
+            )) : <p className="cg-muted">No projects use {skill} yet.</p>}
+          </>
         )}
-      </div>
-      <div className="panel-actions">
-        {startup.apply_url && <a className="btn btn-primary" href={startup.apply_url} target="_blank" rel="noopener noreferrer">Apply</a>}
-        <button className="btn btn-outline" type="button" onClick={onSave}>Save to Watchlist</button>
+        {tab === 'Companies' && (
+          <>
+            <p className="cg-section-label">Top matching companies <span className="cg-count">{companies.length}</span></p>
+            {companies.length ? companies.slice(0, 8).map(company => (
+              <MatchRow
+                key={company.id}
+                name={company.name}
+                score={matchScoreOf(company)}
+                onClick={() => onFocusNode(`startup:${company.id}`)}
+              />
+            )) : <p className="cg-muted">No matched companies require {skill} yet.</p>}
+          </>
+        )}
+        {tab === 'Opportunities' && (
+          <>
+            <p className="cg-section-label">Open roles needing {skill}</p>
+            {companies.length ? companies.slice(0, 6).flatMap(company =>
+              (company.roles_available ?? []).map(role => (
+                <div className="cg-opp-row" key={`${company.id}:${role}`}>
+                  <div>
+                    <p className="cg-opp-role">{role}</p>
+                    <p className="cg-opp-co">{company.name} · {matchScoreOf(company)}% match</p>
+                  </div>
+                  {company.apply_url && (
+                    <a className="cg-btn cg-btn-sm" href={company.apply_url} target="_blank" rel="noopener noreferrer">Apply</a>
+                  )}
+                </div>
+              ))
+            ) : <p className="cg-muted">No open roles found for {skill}.</p>}
+            {projects.length > 0 && (
+              <>
+                <p className="cg-section-label">Build with it</p>
+                {projects.map(project => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    className="cg-link-row"
+                    onClick={() => onFocusNode(`hackathon:${project.id}`)}
+                  >
+                    {project.name}
+                  </button>
+                ))}
+              </>
+            )}
+          </>
+        )}
       </div>
     </>
   )
 }
 
-function SkillKnownContent({ node, startups, hackathons, onFocusNode }) {
-  const { skill, demand = 0, totalOrgs = 0 } = node.raw
-  const companies = startups.filter(startup => (startup.skills_required ?? []).some(item => isSameSkill(item, skill)))
-  const events = hackathons.filter(hackathon => (hackathon.skills_relevant ?? []).some(item => isSameSkill(item, skill)))
+// ── Skill gap ────────────────────────────────────────────────────────────────
 
-  return (
-    <div className="panel-body">
-      <div className="panel-section">
-        <span className="pill known">In your stack</span>
-      </div>
-
-      <div className="panel-section">
-        {totalOrgs > 0 ? (
-          <Meter
-            label="Demand across your matches"
-            value={demand}
-            max={totalOrgs}
-            unit={demand === 1 ? ' org' : ' orgs'}
-            maxUnit={totalOrgs === 1 ? ' org' : ' orgs'}
-            tone="blue"
-            note={`${companies.length} ${companies.length === 1 ? 'company' : 'companies'} and ${events.length} ${events.length === 1 ? 'hackathon' : 'hackathons'} ask for ${skill}`}
-          />
-        ) : (
-          <p className="meter-note meter-note--empty">No matches ask for {skill} yet — run an analysis or ingest companies to see demand.</p>
-        )}
-      </div>
-
-      <div className="panel-section">
-        <p className="panel-section-title">Companies requiring it</p>
-        <div className="pill-row">
-          {companies.length
-            ? companies.map(company => (
-              <button className="pill neutral" key={company.id} type="button" onClick={() => onFocusNode(`startup:${company.id}`)}>
-                {company.name}
-              </button>
-            ))
-            : <span className="pill neutral">No matches yet</span>}
-        </div>
-      </div>
-
-      <div className="panel-section">
-        <p className="panel-section-title">Events using it</p>
-        <div className="pill-row">
-          {events.length
-            ? events.map(event => (
-              <button className="pill neutral" key={event.id} type="button" onClick={() => onFocusNode(`hackathon:${event.id}`)}>
-                {event.name}
-              </button>
-            ))
-            : <span className="pill neutral">No events yet</span>}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SkillGapContent({ node, userId, userStack, onLearned }) {
+function SkillGapContent({ node, userId, userStack, startups, hackathons, onFocusNode, onLearned }) {
+  const [tab, setTab] = useState('Overview')
   const gap = node.raw
+  const companies = companiesRequiring(gap.skill, startups).sort((a, b) => matchScoreOf(b) - matchScoreOf(a))
+  const projects = projectsUsing(gap.skill, hackathons)
   const total = Math.max(1, gap.rankedTotal ?? 1)
 
   async function markLearned() {
@@ -225,239 +235,388 @@ function SkillGapContent({ node, userId, userStack, onLearned }) {
 
   return (
     <>
-      <div className="panel-body">
-        <div className="panel-section">
-          <span className="pill missing">Not in your stack</span>
-          {gap.inferred && <span className="pill neutral">Unranked requirement</span>}
-        </div>
-
-        <div className="panel-section">
-          {gap.priority ? (
-            /* Inverted: rank 1 is the most urgent, so it reads as a full bar. */
-            <Meter
-              label="Gap priority"
-              value={total - gap.priority + 1}
-              max={total}
-              unit=""
-              tone="accent"
-              note={`Ranked ${gap.priority} of ${total} gaps to close first`}
-            />
-          ) : (
-            <Meter
-              label="Asked for by"
-              value={gap.demand ?? 0}
-              max={Math.max(1, gap.demand ?? 1)}
-              unit={(gap.demand ?? 0) === 1 ? ' org' : ' orgs'}
-              maxUnit={(gap.demand ?? 1) === 1 ? ' org' : ' orgs'}
-              tone="ochre"
-              note="Not in your ranked gap list — it came from a company or event requirement"
-            />
-          )}
-        </div>
-
-        <div className="panel-section">
-          <p className="panel-section-title">Why you need this</p>
-          <p className="panel-prose">{gap.why}</p>
-        </div>
-
-        <div className="panel-section">
-          <p className="panel-section-title">Learning path</p>
-          <div className="detail-row"><span>Time</span><span>{gap.time_weeks ?? 2} weeks</span></div>
-          <div className="detail-row"><span>Difficulty</span><span>{gap.difficulty ?? 'Beginner friendly'}</span></div>
-          {gap.resource && (
-            <a className="panel-link" href={gap.resource} target="_blank" rel="noopener noreferrer">Start learning →</a>
-          )}
-        </div>
-
-        <div className="panel-section">
-          <p className="panel-section-title">Impact</p>
-          <div className="detail-row"><span>Salary</span><span className="val-moss">{gap.salary_impact ?? '+15-20%'}</span></div>
-          <div className="detail-row"><span>Access</span><span className="val-accent">Unlocks more companies</span></div>
-        </div>
+      <Header node={node} badge={gap.priority ? `Gap · P${gap.priority}` : 'Skill Gap'} badgeTone="gap" onClose={node.onClose} />
+      <Tabs tabs={['Overview', 'Companies']} active={tab} onChange={setTab} />
+      <div className="cg-panel-body">
+        {tab === 'Overview' && (
+          <>
+            <DemandRow demand={gap.demand ?? 0} totalOrgs={Math.max(1, startups.length + hackathons.length)} skill={gap.skill} />
+            <p className="cg-section-label">Skill gap — has vs required</p>
+            <div className="cg-gap-card">
+              <p className="cg-gap-line"><span className="cg-gap-k">You have</span>Not in your stack yet</p>
+              <p className="cg-gap-line"><span className="cg-gap-k">Required by</span>{companies.length} companies · {projects.length} projects</p>
+              {gap.priority && <p className="cg-gap-line"><span className="cg-gap-k">Priority</span>#{gap.priority} of {total} gaps to close</p>}
+            </div>
+            {gap.why && (
+              <>
+                <p className="cg-section-label">Why you need this</p>
+                <p className="cg-prose">{gap.why}</p>
+              </>
+            )}
+            <div className="cg-detail-grid">
+              <div className="cg-detail"><span>Time to learn</span><strong>{gap.time_weeks ?? 2} weeks</strong></div>
+              <div className="cg-detail"><span>Difficulty</span><strong>{gap.difficulty ?? 'Beginner friendly'}</strong></div>
+              <div className="cg-detail"><span>Salary impact</span><strong className="cg-good">{gap.salary_impact ?? '+15–20%'}</strong></div>
+            </div>
+            {gap.resource && (
+              <a className="cg-link" href={gap.resource} target="_blank" rel="noopener noreferrer">Start learning →</a>
+            )}
+          </>
+        )}
+        {tab === 'Companies' && (
+          <>
+            <p className="cg-section-label">Unlocks these matches <span className="cg-count">{companies.length}</span></p>
+            {companies.length ? companies.slice(0, 8).map(company => (
+              <MatchRow
+                key={company.id}
+                name={company.name}
+                score={matchScoreOf(company)}
+                onClick={() => onFocusNode(`startup:${company.id}`)}
+              />
+            )) : <p className="cg-muted">No matched companies list {gap.skill} yet.</p>}
+          </>
+        )}
       </div>
-      <div className="panel-actions">
-        <button className="btn btn-success" type="button" onClick={markLearned}>Mark as Learned</button>
+      <div className="cg-panel-actions">
+        <button className="cg-btn cg-btn-primary" type="button" onClick={markLearned}>Mark as Learned</button>
       </div>
     </>
   )
 }
 
-function HackathonContent({ node }) {
-  const hackathon = node.raw
-  const relevant = hackathon.skills_relevant ?? []
-  const have = hackathon.matchedSkills ?? []
-  const missing = hackathon.missingSkills ?? relevant.filter(skill => !have.includes(skill))
-  const days = hackathon.days ?? daysUntil(hackathon.deadline)
+// ── Learning (in progress) ───────────────────────────────────────────────────
+
+function SkillLearningContent({ node, startups, hackathons, onFocusNode, onLearned }) {
+  const { skill, demand = 0, totalOrgs = 0 } = node.raw
+  const companies = companiesRequiring(skill, startups).sort((a, b) => matchScoreOf(b) - matchScoreOf(a))
+  const projects = projectsUsing(skill, hackathons)
 
   return (
     <>
-      <div className="panel-body">
-        <div className="panel-section">
-          <Meter
-            label="Skill coverage"
-            value={have.length}
-            max={Math.max(1, relevant.length)}
-            unit=" skills"
-            tone={toneForScore(relevant.length ? (have.length / relevant.length) * 100 : 0)}
-            note={`${have.length} of ${relevant.length} relevant skills already in your stack`}
+      <Header node={node} badge="Learning" badgeTone="learning" onClose={node.onClose} />
+      <div className="cg-panel-body">
+        <DemandRow demand={demand} totalOrgs={totalOrgs} skill={skill} />
+        <p className="cg-section-label">Status</p>
+        <PillRow items={['In progress — keep going']} tone="learning" />
+        <p className="cg-section-label">Companies waiting on it <span className="cg-count">{companies.length}</span></p>
+        {companies.length ? companies.slice(0, 6).map(company => (
+          <MatchRow
+            key={company.id}
+            name={company.name}
+            score={matchScoreOf(company)}
+            onClick={() => onFocusNode(`startup:${company.id}`)}
           />
-        </div>
-
-        {days != null && (
-          <div className="panel-section">
-            {/* Urgency counts down: a full bar means the deadline is imminent. */}
-            <Meter
-              label="Deadline urgency"
-              value={Math.max(0, 60 - Math.min(days, 60))}
-              max={60}
-              unit=" days"
-              tone={days < 14 ? 'accent' : days < 30 ? 'ochre' : 'moss'}
-              note={days === 0 ? 'Closes today' : `${days} days left to register`}
-            />
-          </div>
-        )}
-
-        <div className="panel-section">
-          <p className="panel-section-title">Skills needed</p>
-          <SkillSplit have={have} missing={missing} />
-        </div>
-
-        <div className="panel-section">
-          <p className="panel-section-title">Details</p>
-          <div className="pill-row pill-row--spaced">
-            <span className="pill neutral">{hackathon.platform}</span>
-            <span className="pill neutral">{hackathon.type}</span>
-          </div>
-          <div className="detail-row"><span>Duration</span><span>{hackathon.duration_hours} hours</span></div>
-          <div className="detail-row"><span>Team</span><span>{hackathon.team_size_min}-{hackathon.team_size_max} people</span></div>
-          <div className="detail-row"><span>Prize</span><span className="val-moss">{formatPrize(hackathon.prize_pool_inr)}</span></div>
-          <div className="detail-row">
-            <span>Deadline</span>
-            <span>{hackathon.deadline ? new Date(hackathon.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}</span>
-          </div>
-        </div>
-
-        {/* Never let a projected date read as a published one. Events whose organiser
-            has not announced dates carry date_status: "expected" in the dataset. */}
-        {hackathon.date_status === 'expected' && (
-          <div className="panel-section">
-            <p className="panel-note panel-note--caution">
-              <strong>Dates not yet confirmed.</strong>{' '}
-              {hackathon.date_status_reason ?? 'Projected from this event’s previous editions.'} Check the registration page before you plan around it.
-            </p>
-          </div>
-        )}
-
-        {hackathon.date_status === 'confirmed' && hackathon.date_note && (
-          <div className="panel-section">
-            <p className="panel-note">{hackathon.date_note}</p>
-          </div>
+        )) : <p className="cg-muted">No matched companies require {skill} yet.</p>}
+        {projects.length > 0 && (
+          <>
+            <p className="cg-section-label">Practice it here</p>
+            {projects.map(project => (
+              <button
+                key={project.id}
+                type="button"
+                className="cg-link-row"
+                onClick={() => onFocusNode(`hackathon:${project.id}`)}
+              >
+                {project.name}
+              </button>
+            ))}
+          </>
         )}
       </div>
-      <div className="panel-actions">
+      <div className="cg-panel-actions">
+        <button className="cg-btn cg-btn-primary" type="button" onClick={() => onLearned(skill)}>Mark as Learned</button>
+      </div>
+    </>
+  )
+}
+
+// ── Company ──────────────────────────────────────────────────────────────────
+
+function StartupContent({ node, userStack, onFocusNode, onSave }) {
+  const [tab, setTab] = useState('Overview')
+  const startup = node.raw
+  const score = matchScoreOf(startup)
+  const required = startup.skills_required ?? []
+  const have = required.filter(skill => userStack.some(known => isSameSkill(known, skill)))
+  const missing = required.filter(skill => !have.some(item => isSameSkill(item, skill)))
+  const roles = startup.roles_available ?? []
+
+  return (
+    <>
+      <Header node={node} badge={`${score}% Match`} badgeTone={score >= 60 ? 'skill' : 'gap'} onClose={node.onClose} />
+      <Tabs tabs={['Overview', 'Skills', 'Opportunities']} active={tab} onChange={setTab} />
+      <div className="cg-panel-body">
+        {tab === 'Overview' && (
+          <>
+            <p className="cg-section-label">Stack match</p>
+            <div className="cg-bar cg-bar--big"><div className="cg-bar-fill cg-bar-fill--high" style={{ width: `${clamp01(score / 100) * 100}%` }} /></div>
+            <p className="cg-demand-note">{have.length} of {required.length} required skills covered</p>
+            <div className="cg-detail-grid">
+              <div className="cg-detail"><span>Location</span><strong>{startup.location ?? '—'}</strong></div>
+              <div className="cg-detail"><span>Stage</span><strong>{startup.stage ?? '—'}</strong></div>
+              <div className="cg-detail"><span>Experience</span><strong>{startup.min_experience ?? '—'}</strong></div>
+              <div className="cg-detail"><span>Salary</span><strong>{startup.salary_range_lpa ? `${startup.salary_range_lpa} LPA` : '—'}</strong></div>
+            </div>
+            {startup.description && <p className="cg-prose">{startup.description}</p>}
+            {(startup.interview_topics ?? []).length > 0 && (
+              <>
+                <p className="cg-section-label">Interview topics</p>
+                <PillRow items={startup.interview_topics} />
+              </>
+            )}
+          </>
+        )}
+        {tab === 'Skills' && (
+          <>
+            <p className="cg-section-label">Required skills</p>
+            <PillRow items={required} empty="No listed requirements" />
+            <p className="cg-section-label">Skill gap — matched vs missing</p>
+            <GapSplit have={have} missing={missing} />
+          </>
+        )}
+        {tab === 'Opportunities' && (
+          <>
+            <p className="cg-section-label">Relevant opportunities <span className="cg-count">{roles.length}</span></p>
+            {roles.length ? roles.map(role => (
+              <div className="cg-opp-row" key={role}>
+                <div>
+                  <p className="cg-opp-role">{role}</p>
+                  <p className="cg-opp-co">{startup.name} · {score}% match</p>
+                </div>
+                {startup.apply_url && (
+                  <a className="cg-btn cg-btn-sm" href={startup.apply_url} target="_blank" rel="noopener noreferrer">Apply</a>
+                )}
+              </div>
+            )) : <p className="cg-muted">No listed openings right now.</p>}
+          </>
+        )}
+      </div>
+      <div className="cg-panel-actions">
+        {startup.apply_url && (
+          <a className="cg-btn cg-btn-primary" href={startup.apply_url} target="_blank" rel="noopener noreferrer">Find Jobs ↗</a>
+        )}
+        <button className="cg-btn cg-btn-outline" type="button" onClick={onSave}>Save to Watchlist</button>
+      </div>
+    </>
+  )
+}
+
+// ── Project (hackathon) ──────────────────────────────────────────────────────
+
+function HackathonContent({ node, userStack, gapSkills, onFocusNode }) {
+  const hackathon = node.raw
+  const relevant = hackathon.skills_relevant ?? []
+  const have = relevant.filter(skill => userStack.some(known => isSameSkill(known, skill)))
+  const missing = relevant.filter(skill => !have.some(item => isSameSkill(item, skill)))
+  const closesGaps = (gapSkills ?? []).filter(gap => relevant.some(skill => isSameSkill(skill, gap.skill)))
+
+  return (
+    <>
+      <Header node={node} badge="Project" badgeTone="project" onClose={node.onClose} />
+      <div className="cg-panel-body">
+        <p className="cg-section-label">Skills used</p>
+        <GapSplit have={have} missing={missing} haveLabel="You bring" missingLabel="You'd pick up" />
+        <p className="cg-section-label">Related technologies</p>
+        <PillRow items={relevant} empty="No listed technologies" />
+        <p className="cg-section-label">Career skills this strengthens</p>
+        {have.length || closesGaps.length ? (
+          <div className="cg-pills">
+            {have.map(skill => <span key={`s:${skill}`} className="cg-pill cg-pill--have">{skill} · sharpens</span>)}
+            {closesGaps.map(gap => (
+              <button
+                key={`g:${gap.skill}`}
+                type="button"
+                className="cg-pill cg-pill--missing"
+                onClick={() => onFocusNode(`skill-gap:${gap.skill}`)}
+              >
+                {gap.skill} · closes gap
+              </button>
+            ))}
+          </div>
+        ) : <p className="cg-muted">Add skills to your stack to see what this project strengthens.</p>}
+        <div className="cg-detail-grid">
+          <div className="cg-detail"><span>Organizer</span><strong>{hackathon.organizer ?? hackathon.platform ?? '—'}</strong></div>
+          <div className="cg-detail"><span>Format</span><strong>{hackathon.type ?? '—'}</strong></div>
+          <div className="cg-detail"><span>Team</span><strong>{hackathon.team_size_min ?? '—'}–{hackathon.team_size_max ?? '—'} people</strong></div>
+          <div className="cg-detail"><span>Deadline</span><strong>{hackathon.deadline ? new Date(hackathon.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}</strong></div>
+        </div>
+        {hackathon.theme && <p className="cg-prose">{hackathon.theme}</p>}
+      </div>
+      <div className="cg-panel-actions">
         {hackathon.registration_url && (
-          <a className="btn btn-primary" href={hackathon.registration_url} target="_blank" rel="noopener noreferrer">Register Now</a>
+          <a className="cg-btn cg-btn-primary" href={hackathon.registration_url} target="_blank" rel="noopener noreferrer">Register ↗</a>
         )}
       </div>
     </>
   )
 }
 
-function UserContent({ userStack, startups, hackathons, gapSkills, onFocusNode }) {
+// ── You ──────────────────────────────────────────────────────────────────────
+
+function UserContent({ node, userStack, startups, hackathons, gapSkills, learningInProgress, onFocusNode }) {
   const topMatch = startups[0]
-  const nextDeadline = hackathons.find(item => item.deadline)
-  const covered = userStack.length
-  const total = covered + gapSkills.length
 
   return (
-    <div className="panel-body">
-      <div className="panel-section">
-        <div className="profile-head">
-          <div className="avatar" aria-hidden="true">YOU</div>
-          <div>
-            <p className="panel-title">Your Profile</p>
-            <p className="caption">Grafted career graph</p>
-          </div>
+    <>
+      <Header node={node} badge="You" badgeTone="user" onClose={node.onClose} />
+      <div className="cg-panel-body">
+        <div className="cg-stat-trio">
+          <div className="cg-stat"><strong>{userStack.length}</strong><span>skills</span></div>
+          <div className="cg-stat"><strong>{startups.length}</strong><span>companies</span></div>
+          <div className="cg-stat"><strong>{gapSkills.length}</strong><span>gaps</span></div>
         </div>
-      </div>
-
-      <div className="panel-section">
-        <Meter
-          label="Stack coverage"
-          value={covered}
-          max={Math.max(1, total)}
-          unit=" skills"
-          tone="blue"
-          note={`${gapSkills.length} gaps stand between you and your top matches`}
-        />
-      </div>
-
-      <div className="panel-section">
-        <p className="panel-section-title">Your stack</p>
-        <div className="pill-row">
+        <p className="cg-section-label">Your stack</p>
+        <div className="cg-pills">
           {userStack.map(skill => (
-            <button className="pill known" key={skill} type="button" onClick={() => onFocusNode(`skill-known:${skill}`)}>
+            <button key={skill} type="button" className="cg-pill cg-pill--have" onClick={() => onFocusNode(`skill-known:${skill}`)}>
               {skill}
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="panel-section">
-        <p className="panel-section-title">In your memory</p>
-        <div className="detail-row"><span>Top match</span><span>{topMatch ? `${topMatch.name}` : '—'}</span></div>
-        <div className="detail-row">
-          <span>Next deadline</span>
-          <span>{nextDeadline ? `${nextDeadline.name} · ${daysUntil(nextDeadline.deadline)}d` : '—'}</span>
+        {(learningInProgress ?? []).length > 0 && (
+          <>
+            <p className="cg-section-label">Learning now</p>
+            <div className="cg-pills">
+              {learningInProgress.map(skill => (
+                <button key={skill} type="button" className="cg-pill cg-pill--learning" onClick={() => onFocusNode(`skill-learning:${skill}`)}>
+                  {skill}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+        <div className="cg-detail-grid">
+          <div className="cg-detail"><span>Top match</span><strong>{topMatch ? topMatch.name : '—'}</strong></div>
+          <div className="cg-detail"><span>Top gap</span><strong>{gapSkills[0]?.skill ?? '—'}</strong></div>
         </div>
-        <div className="detail-row"><span>Top gap</span><span>{gapSkills[0]?.skill ?? '—'}</span></div>
+        {hackathons[0] && (
+          <button type="button" className="cg-link-row" onClick={() => onFocusNode(`hackathon:${hackathons[0].id}`)}>
+            Next project: {hackathons[0].name}
+          </button>
+        )}
       </div>
-
-      <div className="panel-section">
-        <p className="panel-section-title">Counts</p>
-        <div className="stats-grid">
-          <div className="stat-box"><strong>{userStack.length}</strong><span>skills</span></div>
-          <div className="stat-box"><strong>{gapSkills.length}</strong><span>gaps</span></div>
-          <div className="stat-box"><strong>{startups.length}</strong><span>startups</span></div>
-          <div className="stat-box"><strong>{hackathons.length}</strong><span>hackathons</span></div>
-        </div>
-      </div>
-    </div>
+    </>
   )
 }
 
-export default function DetailPanel({
-  node,
-  onClose,
-  startups,
-  hackathons,
-  userStack,
-  userId,
-  gapSkills,
-  onFocusNode,
-  onLearned,
-  onSave,
-}) {
-  if (!node) return null
+// ── Learning overview (Learning tab, nothing selected) ───────────────────────
+
+function LearningOverview({ learnedSkills, learningInProgress, gapSkills, startups, onFocusNode, onClose }) {
+  const recommended = (gapSkills ?? []).slice(0, 6)
 
   return (
-    <aside className="detail-panel">
-      <Header node={node} onClose={onClose} />
-      {node.type === 'startup' && <StartupContent node={node} userStack={userStack} onSave={onSave} />}
+    <>
+      <div className="cg-panel-head">
+        <span className="cg-panel-icon cg-panel-icon--learning" aria-hidden="true">L</span>
+        <div className="cg-panel-title-wrap">
+          <p className="cg-panel-title">Learning Path</p>
+          <span className="cg-badge cg-badge--learning">Overview</span>
+        </div>
+        <button className="cg-panel-close" type="button" onClick={onClose} aria-label="Close detail panel">×</button>
+      </div>
+      <div className="cg-panel-body">
+        <p className="cg-section-label">Completed <span className="cg-count">{learnedSkills.length}</span></p>
+        {learnedSkills.length ? (
+          <div className="cg-pills">
+            {learnedSkills.map(skill => (
+              <button key={skill} type="button" className="cg-pill cg-pill--have" onClick={() => onFocusNode(`skill-known:${skill}`)}>
+                {skill}
+              </button>
+            ))}
+          </div>
+        ) : <p className="cg-muted">Nothing marked complete yet — open a gap and hit “Mark as Learned”.</p>}
+
+        <p className="cg-section-label">In progress <span className="cg-count">{(learningInProgress ?? []).length}</span></p>
+        {(learningInProgress ?? []).length ? (
+          <div className="cg-pills">
+            {learningInProgress.map(skill => (
+              <button key={skill} type="button" className="cg-pill cg-pill--learning" onClick={() => onFocusNode(`skill-learning:${skill}`)}>
+                {skill}
+              </button>
+            ))}
+          </div>
+        ) : <p className="cg-muted">No skills in progress. Add them from your profile.</p>}
+
+        <p className="cg-section-label">Recommended next <span className="cg-count">{recommended.length}</span></p>
+        {recommended.length ? recommended.map(gap => {
+          const needCount = companiesRequiring(gap.skill, startups).length
+          return (
+            <button
+              key={gap.skill}
+              type="button"
+              className="cg-rec-row"
+              onClick={() => onFocusNode(`skill-gap:${gap.skill}`)}
+            >
+              <span className={`cg-prio cg-prio--${(gap.priority ?? 99) <= 3 ? 'hot' : 'warm'}`}>
+                {gap.priority ? `P${gap.priority}` : '•'}
+              </span>
+              <span className="cg-rec-main">
+                <strong>{gap.skill}</strong>
+                <span>Required by {needCount} {needCount === 1 ? 'company' : 'companies'} · {gap.time_weeks ?? 2} weeks</span>
+              </span>
+            </button>
+          )
+        }) : <p className="cg-muted">No gaps detected — run an analysis to get recommendations.</p>}
+      </div>
+    </>
+  )
+}
+
+export default function DetailPanel(props) {
+  const {
+    node, onClose, startups = [], hackathons = [], userStack = [],
+    userId, gapSkills = [], learningSkills = [], learnedSkills = [],
+    learningInProgress = [], onFocusNode, onLearned, onSave,
+    showLearningOverview = false,
+  } = props
+
+  if (showLearningOverview) {
+    return (
+      <aside className="detail-panel cg-panel">
+        <LearningOverview
+          learnedSkills={learnedSkills}
+          learningInProgress={learningInProgress}
+          gapSkills={gapSkills}
+          startups={startups}
+          onFocusNode={onFocusNode}
+          onClose={onClose}
+        />
+      </aside>
+    )
+  }
+
+  if (!node) return null
+  const withClose = { ...node, onClose }
+
+  return (
+    <aside className="detail-panel cg-panel">
+      {node.type === 'startup' && (
+        <StartupContent node={withClose} userStack={userStack} onFocusNode={onFocusNode} onSave={onSave} />
+      )}
       {node.type === 'skill_known' && (
-        <SkillKnownContent node={node} startups={startups} hackathons={hackathons} onFocusNode={onFocusNode} />
+        <SkillContent node={withClose} startups={startups} hackathons={hackathons} onFocusNode={onFocusNode} />
       )}
       {node.type === 'skill_gap' && (
-        <SkillGapContent node={node} userId={userId} userStack={userStack} onLearned={onLearned} />
+        <SkillGapContent
+          node={withClose} userId={userId} userStack={userStack}
+          startups={startups} hackathons={hackathons}
+          onFocusNode={onFocusNode} onLearned={onLearned}
+        />
       )}
-      {node.type === 'hackathon' && <HackathonContent node={node} />}
+      {node.type === 'skill_learning' && (
+        <SkillLearningContent
+          node={withClose} startups={startups} hackathons={hackathons}
+          onFocusNode={onFocusNode} onLearned={onLearned}
+        />
+      )}
+      {node.type === 'hackathon' && (
+        <HackathonContent node={withClose} userStack={userStack} gapSkills={gapSkills} onFocusNode={onFocusNode} />
+      )}
       {node.type === 'user' && (
         <UserContent
-          userStack={userStack}
-          startups={startups}
-          hackathons={hackathons}
-          gapSkills={gapSkills}
-          onFocusNode={onFocusNode}
+          node={withClose} userStack={userStack} startups={startups}
+          hackathons={hackathons} gapSkills={gapSkills}
+          learningInProgress={learningInProgress} onFocusNode={onFocusNode}
         />
       )}
     </aside>

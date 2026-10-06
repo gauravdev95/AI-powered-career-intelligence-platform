@@ -6,6 +6,7 @@
 @import './styles/auth.css';
 @import './styles/appshell.css';
 @import './styles/dashboard.css';
+@import './styles/graph.css';
 
 @tailwind base;
 @tailwind components;

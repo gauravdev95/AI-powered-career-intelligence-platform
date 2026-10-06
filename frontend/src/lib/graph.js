@@ -41,9 +41,11 @@ const MAX_INFERRED_GAPS = 12
 
 /** Which node groups survive each segmented-filter setting. */
 export const GROUP_FILTERS = {
-  skills: new Set(['user', 'skill_known', 'skill_gap']),
-  startups: new Set(['user', 'skill_known', 'skill_gap', 'startup']),
-  hackathons: new Set(['user', 'skill_known', 'skill_gap', 'hackathon']),
+  all: new Set(['user', 'skill_known', 'skill_gap', 'skill_learning', 'startup', 'hackathon']),
+  skills: new Set(['user', 'skill_known']),
+  companies: new Set(['user', 'startup', 'skill_known', 'skill_gap']),
+  projects: new Set(['user', 'hackathon', 'skill_known', 'skill_gap']),
+  learning: new Set(['user', 'skill_gap', 'skill_learning']),
 }
 
 /** Size range per group, in vis-network units. Encodes rank, not category. */
@@ -53,6 +55,7 @@ const SIZE_RANGE = {
   hackathon: [13, 26],
   skill_known: [12, 22],
   skill_gap: [12, 22],
+  skill_learning: [12, 22],
 }
 
 // ── Small helpers ────────────────────────────────────────────────────────────
@@ -152,6 +155,7 @@ export function buildGraph({
   hackathons = [],
   gapReport = null,
   learnedSkills = [],
+  learningStack = [],
 } = {}) {
   const knownSkills = Array.from(new Set([
     ...(userStack.length ? userStack : DEFAULT_STACK),
@@ -285,6 +289,36 @@ export function buildGraph({
     edges.push({ from: 'user', to: id, dashes: true, width: widthFor(rank), relation: 'needs' })
   })
 
+  // ── Skills being learned (in progress) ─────────────────────────────────────
+  // profile.learning_stack: skills the user marked as currently learning. They
+  // are neither "known" nor "gaps" — they sit between the two, which is exactly
+  // what the Learning tab visualises.
+  const learningSkills = Array.from(new Set(learningStack))
+    .filter(skill => !knownSkills.some(known => isSameSkill(known, skill)))
+
+  learningSkills.forEach(skill => {
+    const id = `skill-learning:${skill}`
+    const demand = demandOf(skill)
+    const rank = demand / maxDemand
+    addNode({
+      id,
+      label: skill,
+      group: 'skill_learning',
+      size: sizeFor('skill_known', rank),
+      title: `${skill}<br>In progress · wanted by ${demand} of ${requirementSets.length}`,
+    }, {
+      id,
+      type: 'skill_learning',
+      label: skill,
+      icon: 'learning',
+      mobileView: 'gaps',
+      meta: { value: 'Learning', tone: 'blue' },
+      sort: rank,
+      raw: { skill, demand, totalOrgs: requirementSets.length },
+    })
+    edges.push({ from: 'user', to: id, width: widthFor(rank), relation: 'learning' })
+  })
+
   // ── Companies ──────────────────────────────────────────────────────────────
   const rankedStartups = [...startups].sort((a, b) => matchScoreOf(b) - matchScoreOf(a))
 
@@ -389,6 +423,7 @@ export function buildGraph({
     adjacency: buildAdjacency(deduped),
     gapSkills,
     knownSkills,
+    learningSkills,
     startups: rankedStartups,
     hackathons: rankedHackathons,
   }
@@ -548,6 +583,71 @@ export function focusSubgraph(graph, focusId, filter = 'all') {
     focus,
     hidden,
   }
+}
+
+// ── Full radial view ─────────────────────────────────────────────────────────
+
+/**
+ * The whole filtered graph at once: the profile at the centre, each surviving
+ * group fanned into its own cluster ring around it. Positions are deterministic
+ * (cluster angle × member index), so the "All" view always reads the same way;
+ * physics stays on for drag/zoom interactivity but starts from this layout.
+ *
+ * Clusters with more than MAX_CLUSTER_NODES members keep their largest nodes
+ * and report the rest as hidden — a 20-company shortlist must not bury the
+ * canvas under labels.
+ */
+const MAX_CLUSTER_NODES = 24
+
+/** Cluster angles in degrees (0° = east, clockwise since y grows downward). */
+const CLUSTER_ANGLES = {
+  skill_known: -90,
+  startup: -18,
+  hackathon: 54,
+  skill_gap: 126,
+  skill_learning: 198,
+}
+
+const CLUSTER_ORDER = ['skill_known', 'startup', 'hackathon', 'skill_gap', 'skill_learning']
+
+export function fullGraphView(graph, filter = 'all') {
+  const allowed = GROUP_FILTERS[filter] ?? GROUP_FILTERS.all
+  const keep = graph.nodes.filter(node => allowed.has(node.group))
+  const ids = new Set(keep.map(node => node.id))
+  const edges = graph.edges.filter(edge => ids.has(edge.from) && ids.has(edge.to))
+
+  const RADIUS = 360
+  const placed = []
+  let hidden = 0
+
+  const userNode = keep.find(node => node.group === 'user')
+  if (userNode) placed.push({ ...userNode, x: 0, y: 0, fixed: false })
+
+  CLUSTER_ORDER.forEach(group => {
+    const members = keep
+      .filter(node => node.group === group)
+      .sort((a, b) => (b.size ?? 0) - (a.size ?? 0))
+    if (!members.length) return
+
+    const shown = members.slice(0, MAX_CLUSTER_NODES)
+    hidden += members.length - shown.length
+
+    const angle = (CLUSTER_ANGLES[group] ?? 0) * DEG
+    const cx = Math.cos(angle) * RADIUS
+    const cy = Math.sin(angle) * RADIUS
+    const ring = Math.min(150, 56 + shown.length * 7)
+
+    shown.forEach((node, index) => {
+      if (shown.length === 1) {
+        placed.push({ ...node, x: cx, y: cy })
+        return
+      }
+      const a = (index / shown.length) * Math.PI * 2 - Math.PI / 2
+      placed.push({ ...node, x: cx + Math.cos(a) * ring, y: cy + Math.sin(a) * ring })
+    })
+  })
+
+  return { nodes: placed, edges, hidden }
 }
 
 // ── Landing-page sample ──────────────────────────────────────────────────────

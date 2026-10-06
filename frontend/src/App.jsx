@@ -318,7 +318,8 @@ export default function App() {
     hackathons,
     gapReport,
     learnedSkills,
-  }), [userStack, startups, hackathons, gapReport, learnedSkills])
+    learningStack: profile?.learning_stack ?? [],
+  }), [userStack, startups, hackathons, gapReport, learnedSkills, profile])
 
   // A node can vanish under us — marking a gap as learned replaces `skill-gap:X`
   // with `skill-known:X`. Fall back to the profile rather than a blank canvas.
@@ -363,11 +364,11 @@ export default function App() {
       setGraphFilter('all')
       focusNode('user')
     } else if (id === 'startups') {
-      setGraphFilter('startups')
+      setGraphFilter('companies')
       const first = graph.startups[0]
       if (first) focusNode(`startup:${first.id}`)
     } else if (id === 'hackathons') {
-      setGraphFilter('hackathons')
+      setGraphFilter('projects')
       const first = graph.hackathons[0]
       if (first) focusNode(`hackathon:${first.id}`)
     } else if (id === 'gaps') {
@@ -443,7 +444,6 @@ export default function App() {
     </div>
   )
 
-  const hasRightPanel = selectedNode || rightPanel
   const graphIsEmpty = graph.nodes.length <= 1
 
   const sidebarProps = {
@@ -483,12 +483,7 @@ export default function App() {
         />
         <div className="shell-content">
           {navView === 'graph' ? (
-      <div className={`graph-layout ${hasRightPanel ? 'panel-open' : ''}`}>
-        <Sidebar
-          {...sidebarProps}
-          onSetRightPanel={panel => { setRightPanel(panel); setSelectedNode(null) }}
-        />
-
+      <div className="cg-shell">
         {graphIsEmpty ? (
           <EmptyGraphState
             onIngest={() => { setRightPanel('ingest'); setSelectedNode(null) }}
@@ -499,12 +494,11 @@ export default function App() {
           <Suspense fallback={<LoadingScreen step={0} />}>
             <CareerGraph
               graph={graph}
-              focusPath={focusPath}
-              onFocusNode={focusNode}
-              onClearSelection={() => setSelectedNode(null)}
               filter={graphFilter}
               setFilter={setGraphFilter}
-              onOpenSidebar={() => setSidebarOpen(true)}
+              onFocusNode={focusNode}
+              onClearSelection={() => setSelectedNode(null)}
+              selectedId={selectedNode?.id}
             >
               {memoryVisible && <MemoryBadge context={returnContext} onDismiss={() => setMemoryVisible(false)} />}
             </CareerGraph>
@@ -512,7 +506,7 @@ export default function App() {
         )}
 
         {/* Right panel — either node detail or a feature panel */}
-        {selectedNode && !rightPanel && (
+        {(selectedNode && !rightPanel) || (graphFilter === 'learning' && !rightPanel && !graphIsEmpty) ? (
           <DetailPanel
             node={selectedNode}
             onClose={() => setSelectedNode(null)}
@@ -521,6 +515,10 @@ export default function App() {
             userStack={graph.knownSkills}
             userId={userId}
             gapSkills={graph.gapSkills}
+            learningSkills={graph.learningSkills}
+            learnedSkills={learnedSkills}
+            learningInProgress={profile?.learning_stack ?? []}
+            showLearningOverview={graphFilter === 'learning' && !selectedNode && !rightPanel}
             onFocusNode={focusNode}
             onLearned={skill => {
               setLearnedSkills(prev => prev.includes(skill) ? prev : [...prev, skill])
@@ -528,7 +526,7 @@ export default function App() {
             }}
             onSave={() => window.dispatchEvent(new CustomEvent('grafted:memory-saved'))}
           />
-        )}
+        ) : null}
 
         {rightPanel === 'ingest' && (
           <aside className="detail-panel">
