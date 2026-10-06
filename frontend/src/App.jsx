@@ -21,6 +21,8 @@ const CareerGraph = lazy(() => import('./components/CareerGraph.jsx'))
 const ChatPage = lazy(() => import('./components/ChatPage.jsx'))
 const IngestPage = lazy(() => import('./components/IngestPage.jsx'))
 const WikiPage = lazy(() => import('./components/WikiPage.jsx'))
+const SettingsPage = lazy(() => import('./components/SettingsPage.jsx'))
+const HelpPage = lazy(() => import('./components/HelpPage.jsx'))
 
 /** Deepest focus trail we keep. Older hops fall off the front of the breadcrumb. */
 const MAX_FOCUS_DEPTH = 6
@@ -589,6 +591,14 @@ export default function App() {
           ) : navView === 'wiki' ? (
             <Suspense fallback={<LoadingScreen step={0} />}>
               <WikiPage userId={userId} />
+            </Suspense>
+          ) : navView === 'settings' ? (
+            <Suspense fallback={<LoadingScreen step={0} />}>
+              <SettingsPage userId={userId} onNavigate={handleNav} />
+            </Suspense>
+          ) : navView === 'help' ? (
+            <Suspense fallback={<LoadingScreen step={0} />}>
+              <HelpPage userName={user ? (user.name || user.email) : 'Guest'} />
             </Suspense>
           ) : (
             <ComingSoon page={navView} onBack={() => setNavView('graph')} />

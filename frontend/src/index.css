@@ -10,6 +10,8 @@
 @import './styles/chat.css';
 @import './styles/ingest.css';
 @import './styles/wiki.css';
+@import './styles/settings.css';
+@import './styles/help.css';
 
 @tailwind base;
 @tailwind components;
