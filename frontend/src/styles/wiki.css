@@ -397,7 +397,7 @@
 .wiki-state h3 { color: #fff; font-size: 17px; margin: 12px 0 8px; }
 .wiki-state p { font-size: 13.5px; line-height: 1.65; max-width: 460px; margin: 0 auto; }
 .wiki-state-icon { display: inline-flex; color: #6d4ef2; }
-.wiki-state-icon svg { width: 40px; height: 40px; }
+.wiki-state-icon svg { width: 40px; height: 40px; flex: none; }
 
 /* Pagination */
 
