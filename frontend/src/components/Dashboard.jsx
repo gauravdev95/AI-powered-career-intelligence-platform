@@ -338,17 +338,29 @@ export default function Dashboard({ user, profile, graph, onNavigate, onOpenChat
         <div className="dash-stat">
           <span className="dash-stat-icon dash-tile-green"><Icon name="bolt" className="dash-stat-svg" /></span>
           <span className="dash-stat-meta"><small>Skills</small><strong>{skills.length}</strong></span>
-          <span className="dash-stat-delta">{learning.length > 0 ? `+${learning.length} learning` : 'in your stack'}</span>
+          <span className="dash-stat-delta">
+            {learning.length > 0
+              ? <><b>↑ +{learning.length}</b><small>learning</small></>
+              : <><b>{skills.length}</b><small>in stack</small></>}
+          </span>
         </div>
         <div className="dash-stat">
           <span className="dash-stat-icon dash-tile-purple"><Icon name="case-solid" className="dash-stat-svg" /></span>
           <span className="dash-stat-meta"><small>Matched Companies</small><strong>{startups.length}</strong></span>
-          <span className="dash-stat-delta">{bestMatch ? `top ${bestScore}% match` : 'run analysis'}</span>
+          <span className="dash-stat-delta">
+            {bestMatch
+              ? <><b>{bestScore}%</b><small>top match</small></>
+              : <><b>—</b><small>run analysis</small></>}
+          </span>
         </div>
         <div className="dash-stat">
           <span className="dash-stat-icon dash-tile-orange"><Icon name="target-solid" className="dash-stat-svg" /></span>
           <span className="dash-stat-meta"><small>Active Goals</small><strong>{goals.length}</strong></span>
-          <span className="dash-stat-delta">{profile?.target_role ? trunc(profile.target_role, 18) : 'set a goal'}</span>
+          <span className="dash-stat-delta">
+            {goals.length > 0
+              ? <><b>+{goals.length}</b><small>in progress</small></>
+              : <><b>—</b><small>set a goal</small></>}
+          </span>
         </div>
       </section>
 
