@@ -431,12 +431,17 @@ app.post('/api/analyze', asyncHandler(async (req, res) => {
   ))
   const topMatch = enriched[0] ?? null
 
-  if (topMatch) await engine.recordEntityView(userId, 'startup', topMatch)
-  if (requested.length) await engine.updateStack(userId, stack)
+  // Best-effort enrichment: the ranking above is pure/local and must always
+  // return — a failed side-write must never 500 the analysis itself.
+  try {
+    if (topMatch) await engine.recordEntityView(userId, 'startup', topMatch)
+    if (requested.length) await engine.updateStack(userId, stack)
+  } catch (sideEffectError) {
+    console.warn('[api/analyze] side-effect failed (analysis still returned):', sideEffectError?.message)
+  }
 
   res.json({ startups: enriched, topMatch, total: enriched.length })
 }))
-
 app.post('/api/gaps', asyncHandler(async (req, res) => {
   const userId = await requireSessionUser(req, req.body.userId)
   const profile = await engine.getProfile(userId)
@@ -449,7 +454,11 @@ app.post('/api/gaps', asyncHandler(async (req, res) => {
     : matching.rankStartups(stack, startups, { targetCompanies: profile.target_companies }).slice(0, 5)
 
   const report = matching.buildGapReport(stack, targets.length ? targets : startups.slice(0, 5), skills)
-  await engine.saveGapAnalysis(userId, report, { targets: targets.map(target => target.name) })
+  try {
+    await engine.saveGapAnalysis(userId, report, { targets: targets.map(target => target.name) })
+  } catch (sideEffectError) {
+    console.warn('[api/gaps] saveGapAnalysis failed (report still returned):', sideEffectError?.message)
+  }
 
   res.json(report)
 }))
@@ -460,7 +469,11 @@ app.get('/api/hackathons/:userId', asyncHandler(async (req, res) => {
   const stack = queryStack.length ? queryStack : (await engine.getProfile(userId)).stack
 
   const ranked = matching.rankHackathons(stack, hackathons)
-  if (ranked[0]) await engine.recordEntityView(userId, 'hackathon', ranked[0])
+  try {
+    if (ranked[0]) await engine.recordEntityView(userId, 'hackathon', ranked[0])
+  } catch (sideEffectError) {
+    console.warn('[api/hackathons] recordEntityView failed (ranking still returned):', sideEffectError?.message)
+  }
 
   res.json({ ranked_hackathons: ranked })
 }))

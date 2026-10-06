@@ -51,19 +51,25 @@ export async function initUser(profile) {
   })
 
   const candidates = extractor.fromOnboarding({ ...profile, userId })
-  const written = await rememberMany(userId, candidates)
+  // Memory enrichment is best-effort: the user row above is the source of truth
+  // and must survive even if an embedding or graph write fails.
+  try {
+    const written = await rememberMany(userId, candidates)
 
-  // Wire the profile node to everything it implies, so the graph has a root.
-  const profileMemory = written.find(memory => memory?.type === MEMORY_TYPES.PROFILE)
-  if (profileMemory) {
-    await graph.linkToProfile(userId, written.filter(Boolean), profileMemory.id)
+    // Wire the profile node to everything it implies, so the graph has a root.
+    const profileMemory = written.find(memory => memory?.type === MEMORY_TYPES.PROFILE)
+    if (profileMemory) {
+      await graph.linkToProfile(userId, written.filter(Boolean), profileMemory.id)
+    }
+
+    await recordJourney(userId, JOURNEY_TYPES.ACCOUNT_CREATED, {
+      title: 'Career memory created',
+      description: `${profile.stack?.length ?? 0} skills, ${profile.goals?.length ?? 0} goals recorded`,
+      data: { stack: profile.stack ?? [], experience: profile.experience },
+    })
+  } catch (enrichmentError) {
+    console.warn('[initUser] memory enrichment failed (user row kept):', enrichmentError?.message)
   }
-
-  await recordJourney(userId, JOURNEY_TYPES.ACCOUNT_CREATED, {
-    title: 'Career memory created',
-    description: `${profile.stack?.length ?? 0} skills, ${profile.goals?.length ?? 0} goals recorded`,
-    data: { stack: profile.stack ?? [], experience: profile.experience },
-  })
 
   return getProfile(userId)
 }
@@ -87,17 +93,22 @@ export async function applyOnboardingProfile(userId, profile) {
   })
 
   const candidates = extractor.fromOnboarding({ ...profile, userId })
-  const written = await rememberMany(userId, candidates)
+  // Best-effort enrichment — the scalar update above is the source of truth.
+  try {
+    const written = await rememberMany(userId, candidates)
 
-  const profileMemory = written.find(memory => memory?.type === MEMORY_TYPES.PROFILE)
-  if (profileMemory) {
-    await graph.linkToProfile(userId, written.filter(Boolean), profileMemory.id)
+    const profileMemory = written.find(memory => memory?.type === MEMORY_TYPES.PROFILE)
+    if (profileMemory) {
+      await graph.linkToProfile(userId, written.filter(Boolean), profileMemory.id)
+    }
+
+    await recordJourney(userId, JOURNEY_TYPES.PROFILE_UPDATE, {
+      title: 'Profile updated',
+      description: `${profile.stack?.length ?? 0} skills, ${profile.goals?.length ?? 0} goals recorded`,
+    })
+  } catch (enrichmentError) {
+    console.warn('[applyOnboardingProfile] memory enrichment failed (profile row kept):', enrichmentError?.message)
   }
-
-  await recordJourney(userId, JOURNEY_TYPES.PROFILE_UPDATE, {
-    title: 'Profile updated',
-    description: `${profile.stack?.length ?? 0} skills, ${profile.goals?.length ?? 0} goals recorded`,
-  })
 
   return getProfile(userId)
 }
