@@ -118,7 +118,6 @@ const ENTITY_SCHEMA = {
           skills_required: { type: 'array', items: { type: 'string' } },
           notes: { type: 'string' },
         },
-        required: ['name'],
       },
     },
     skills: {
@@ -130,7 +129,6 @@ const ENTITY_SCHEMA = {
           category: { type: 'string' },
           relevance: { type: 'string' },
         },
-        required: ['name'],
       },
     },
     hackathons: {
@@ -144,7 +142,6 @@ const ENTITY_SCHEMA = {
           deadline: { type: 'string' },
           prize: { type: 'string' },
         },
-        required: ['name'],
       },
     },
     gaps: {
@@ -156,7 +153,6 @@ const ENTITY_SCHEMA = {
           why: { type: 'string' },
           urgency: { type: 'string' },
         },
-        required: ['skill'],
       },
     },
     summary: { type: 'string' },
@@ -186,6 +182,9 @@ developer's stack. Write a one-sentence summary of what this content is.
 Respond as JSON: {"companies": [{"name": "...", "type": "...", "skills_required": ["..."], "notes": "..."}], "skills": [{"name": "...", "category": "...", "relevance": "..."}], "hackathons": [{"name": "...", "platform": "...", "skills_relevant": ["..."], "deadline": "...", "prize": "..."}], "gaps": [{"skill": "...", "why": "...", "urgency": "..."}], "summary": "..."}`,
     json: true,
     maxOutputTokens: 1600,
+    // Structured extraction is slow on some models — allow extra headroom
+    // beyond the default AI_TIMEOUT_MS so it doesn't fail on large inputs.
+    timeoutMs: 90000,
   }
 
   // First try: strict responseSchema. Some providers/models reject nested

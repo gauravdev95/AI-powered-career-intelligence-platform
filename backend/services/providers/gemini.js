@@ -162,7 +162,7 @@ export function modelId() {
  * When `json` is true the model is put in JSON mode and, if a schema is supplied,
  * constrained to it — far more reliable than asking for JSON in the prompt.
  */
-export async function generate({ system, prompt, json = false, schema, maxOutputTokens = 1200, temperature = config.ai.temperature }) {
+export async function generate({ system, prompt, json = false, schema, maxOutputTokens = 1200, temperature = config.ai.temperature, timeoutMs }) {
   const generationConfig = { temperature, maxOutputTokens }
   if (json) {
     generationConfig.responseMimeType = 'application/json'
@@ -175,7 +175,8 @@ export async function generate({ system, prompt, json = false, schema, maxOutput
   }
   if (system) body.systemInstruction = { parts: [{ text: system }] }
 
-  const payload = await callGemini(endpoint(config.ai.model, 'generateContent'), body)
+  const payload = await callGemini(endpoint(config.ai.model, 'generateContent'), body,
+    timeoutMs ? { timeoutMs } : undefined)
   return extractText(payload)
 }
 
