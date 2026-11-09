@@ -55,7 +55,8 @@ describe('user AI keys', () => {
 
   it('rejects invalid keys', async () => {
     for (const bad of ['', '   ', 'short', 'has space']) {
-      await assert.rejects(() => userAiKeys.setAiKey(userId, bad), /INVALID_AI_KEY/)
+      // ApiError carries the machine code on `err.code`, not in the message.
+      await assert.rejects(() => userAiKeys.setAiKey(userId, bad), (err) => err.code === 'INVALID_AI_KEY')
     }
   })
 
@@ -79,7 +80,13 @@ describe('user AI keys', () => {
   it('encryption round-trips and detects tampering', async () => {
     const blob = userAiKeys.encryptKey('AIzaSyD-ROUND-TRIP-0000')
     assert.equal(userAiKeys.decryptKey(blob), 'AIzaSyD-ROUND-TRIP-0000')
-    assert.throws(() => userAiKeys.decryptKey(`${blob}tampered`))
+    // Tamper INSIDE the ciphertext segment: appending to the base64 tag is
+    // not a real tamper (decoding ignores the trailing characters), so flip
+    // a character in the middle of the ciphertext instead — AES-GCM auth
+    // must reject it.
+    const parts = blob.split('.')
+    const tamperedCt = `${parts[2].slice(0, 4)}${parts[2][4] === 'A' ? 'B' : 'A'}${parts[2].slice(5)}`
+    assert.throws(() => userAiKeys.decryptKey([parts[0], parts[1], tamperedCt, parts[3]].join('.')))
     assert.equal(userAiKeys.maskHint('AIzaSyD-ROUND-TRIP-0000'), '••••0000')
   })
 })

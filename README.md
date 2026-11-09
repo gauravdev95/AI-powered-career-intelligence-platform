@@ -90,7 +90,7 @@ cd backend
 npm test
 ```
 
-91 tests. No API key, no Docker, no running database required — integration tests use
+126 tests. No API key, no Docker, no running database required — integration tests use
 an in-process PostgreSQL with the real pgvector extension.
 
 ---
@@ -224,7 +224,7 @@ backend/
 ├── lib/                   errors, validation, SSRF-safe fetch, bounded concurrency
 ├── data/                  curated startups, hackathons, skills
 ├── scripts/               check-data-links.js (npm run data:check)
-└── tests/                 109 tests
+└── tests/                 126 tests
 
 frontend/
 └── src/

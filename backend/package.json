@@ -1,14 +1,14 @@
 {
   "name": "grafted-backend",
   "version": "2.0.0",
-  "description": "Grafted backend — Career Memory Engine on PostgreSQL + pgvector with Gemini",
+  "description": "Grafted backend \u2014 Career Memory Engine on PostgreSQL + pgvector with Gemini",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "build": "node --check server.js",
-    "test": "node --env-file=tests/.env.test --test --test-timeout=180000 tests/",
+    "test": "node --env-file=tests/.env.test --test --test-timeout=180000 tests/*.test.js",
     "test:watch": "node --env-file=tests/.env.test --test --watch tests/",
     "data:check": "node scripts/check-data-links.js",
     "db:migrate": "node db/migrate.js",
